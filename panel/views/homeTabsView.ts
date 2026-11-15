@@ -32,6 +32,7 @@ const VIEWS: HomeViewMode[] = ['list', 'cards', 'compact'];
 
 const KIND_LABELS: Record<HomeSectionConfig['kind'], string> = {
   guests: '扩展',
+  marketplace: '扩展市场',
   'win11-apps': '应用',
   shardx: 'ShardX',
   'wsl-ports': 'WSL 端口',

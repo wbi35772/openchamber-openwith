@@ -18,13 +18,14 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 
-import { CONFIG_PATH, ConfigStore } from './configStore.ts';
+import { CONFIG_DIR, CONFIG_PATH, ConfigStore } from './configStore.ts';
 import { DockerController } from './dockerController.ts';
 import { GuestManager } from './guestManager.ts';
 import { HostLauncher } from './hostLauncher.ts';
 import { K8sController } from './k8sController.ts';
 import { LogController } from './logController.ts';
 import { log } from './logger.ts';
+import { MarketplaceService } from './marketplace.ts';
 import { BrowserController } from './webProxy.ts';
 import { ShardxController } from './shardxController.ts';
 import { TerminalController } from './terminalController.ts';
@@ -70,6 +71,11 @@ const k8s = new K8sController();
 const wsl = new WslController();
 const shardx = new ShardxController();
 const guests = new GuestManager(log);
+const marketplace = new MarketplaceService(
+  log,
+  path.join(CONFIG_DIR, 'openwith-matrix-marketplace.json'),
+  () => configStore.get().settings.marketplace.proxy,
+);
 const terminal = new TerminalController(
   () => configStore.get().settings.terminalShell,
   () => configStore.get().settings.wsl.distro,
@@ -269,9 +275,29 @@ const handle = async (req: http.IncomingMessage, res: http.ServerResponse): Prom
     return;
   }
 
+  if (root === 'marketplace') {
+    if (method === 'GET' && parts.length === 1) {
+      const catalog = await marketplace.get(url.searchParams.get('refresh') === '1');
+      send(res, 200, { ok: true, data: catalog });
+      return;
+    }
+  }
+
   if (root === 'guests') {
+    if (method === 'DELETE' && parts.length === 2 && second) {
+      await guests.uninstall(second);
+      send(res, 200, { ok: true, data: { id: second } });
+      return;
+    }
     if (method === 'GET' && parts.length === 1) {
       send(res, 200, { ok: true, data: await guests.list() });
+      return;
+    }
+    if (method === 'POST' && second === 'install') {
+      const body = asRecord(await readJson(req));
+      const installUrl = asString(body.url).trim();
+      if (!installUrl) throw new HttpError(400, 'url-required');
+      send(res, 200, { ok: true, data: await guests.install(installUrl) });
       return;
     }
     if (method === 'POST' && second === 'updates' && third === 'check') {
@@ -287,6 +313,10 @@ const handle = async (req: http.IncomingMessage, res: http.ServerResponse): Prom
     if (second && method === 'POST' && third === 'frame-grant') {
       const entry = asString(asRecord(await readJson(req)).entry, 'panel/index.html');
       send(res, 200, { ok: true, data: await guests.frameGrant(second, entry) });
+      return;
+    }
+    if (second && method === 'GET' && third === 'service-status') {
+      send(res, 200, { ok: true, data: await guests.serviceStatus(second) });
       return;
     }
     if (second && method === 'POST' && third === 'service-request') {
@@ -692,6 +722,7 @@ const start = async (): Promise<void> => {
   configStore.onChange((next) => launcher.setApps(next.groups.win11.apps));
   server.listen(PORT, '127.0.0.1', () => {
     log(`openwith-matrix ${MATRIX_VERSION} listening on 127.0.0.1:${PORT}; config=${CONFIG_PATH}`);
+    void marketplace.warm();
   });
 };
 

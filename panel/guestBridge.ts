@@ -8,7 +8,20 @@
  * opaque origin; only structured messages cross the boundary.
  */
 
-import type { HostClient, HostReadyContext } from '@openchamber/sdk';
+import type {
+  AttachIssueRequest,
+  FileEditorDocument,
+  GenerateRequest,
+  GuestConnection,
+  GuestItem,
+  GuestRequest,
+  GuestSettings,
+  GuestShellsScope,
+  GuestWorkspaceQuery,
+  HostClient,
+  HostReadyContext,
+  SessionLifecycleEvent,
+} from '@openchamber/sdk';
 import type { GuestServiceRequest, GuestServiceResult } from '../shared/types.ts';
 
 const CHANNEL = 'openchamber.sdk';
@@ -26,21 +39,49 @@ export interface GuestBridgeOptions {
   frame: HTMLIFrameElement;
   ready: () => HostReadyContext | null;
   host: HostClient;
+  /** A synthetic document for file-editor guests opened without a real file. */
+  file?: FileEditorDocument;
   serviceRequest: (request: GuestServiceRequest) => Promise<GuestServiceResult>;
+  serviceStatus: () => Promise<unknown>;
   storage: (request: unknown) => Promise<unknown>;
+  openSurface?: (surfaceId: string) => Promise<void>;
+  onLateGenerateListen?: () => void;
   close: () => void;
   onStatus?: (text: string) => void;
 }
 
 export interface GuestBridge {
   sendReady(): void;
+  sendSession(session: unknown): void;
+  sendSessionLifecycle(event: SessionLifecycleEvent): void;
+  sendDirectory(directory: string | null): void;
+  sendConnection(connection: GuestConnection): void;
+  sendSettings(settings: GuestSettings): void;
+  sendItem(item: GuestItem | null): void;
+  sendGenerateLate(result: unknown): void;
   dispose(): void;
 }
 
 const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
 
+interface SharedSubscription {
+  refs: number;
+  snapshot: unknown;
+  hasSnapshot: boolean;
+  listeners: Set<(snapshot: unknown) => void>;
+  off: () => void;
+}
+
+/**
+ * One host subscription shared by every embedded panel that asks for the same
+ * scope. The host caps a frame at 32 subscriptions, so N guests watching the
+ * same project must not consume N slots.
+ */
+const sharedSubscriptions = new Map<string, SharedSubscription>();
+
 export function createGuestBridge(options: GuestBridgeOptions): GuestBridge {
   let disposed = false;
+  const subscriptions = new Map<string, () => void>();
 
   const post = (message: unknown): void => {
     if (disposed) return;
@@ -52,6 +93,9 @@ export function createGuestBridge(options: GuestBridgeOptions): GuestBridge {
   const readyContext = (): HostReadyContext | null => {
     const base = options.ready();
     if (!base) return null;
+    const features: NonNullable<HostReadyContext['features']> = {};
+    if (base.features?.deviceStorage === true) features.deviceStorage = true;
+    if (base.features?.lateGenerateResults === true) features.lateGenerateResults = true;
     return {
       theme: base.theme,
       locale: base.locale,
@@ -59,8 +103,9 @@ export function createGuestBridge(options: GuestBridgeOptions): GuestBridge {
       session: base.session,
       surface: 'panel',
       connection: base.connection,
-      settings: {},
+      settings: base.settings ?? {},
       item: null,
+      ...(Object.keys(features).length > 0 ? { features } : {}),
     };
   };
 
@@ -81,6 +126,59 @@ export function createGuestBridge(options: GuestBridgeOptions): GuestBridge {
     post({ channel: CHANNEL, v: VERSION, type: 'result', id, ok: false, code, error });
   };
 
+  const subscribeShared = async (
+    key: string,
+    subscriptionId: string,
+    factory: (listener: (snapshot: unknown) => void) => Promise<() => void>,
+    listener: (snapshot: unknown) => void,
+  ): Promise<void> => {
+    let entry = sharedSubscriptions.get(key);
+    if (!entry) {
+      const created: SharedSubscription = {
+        refs: 0,
+        snapshot: undefined,
+        hasSnapshot: false,
+        listeners: new Set(),
+        off: () => undefined,
+      };
+      sharedSubscriptions.set(key, created);
+      created.off = await factory((snapshot) => {
+        created.snapshot = snapshot;
+        created.hasSnapshot = true;
+        for (const fn of created.listeners) {
+          try {
+            fn(snapshot);
+          } catch {
+            /* one guest listener must not starve the others */
+          }
+        }
+      });
+      entry = created;
+    }
+    entry.refs += 1;
+    entry.listeners.add(listener);
+    const shared = entry;
+    if (shared.hasSnapshot) {
+      const cached = shared.snapshot;
+      window.setTimeout(() => {
+        if (shared.listeners.has(listener)) listener(cached);
+      }, 0);
+    }
+    subscriptions.set(subscriptionId, () => {
+      const current = sharedSubscriptions.get(key);
+      if (!current) return;
+      current.listeners.delete(listener);
+      current.refs -= 1;
+      if (current.refs > 0) return;
+      sharedSubscriptions.delete(key);
+      try {
+        current.off();
+      } catch {
+        /* host subscription already gone */
+      }
+    });
+  };
+
   const handle = async (message: GuestCall): Promise<void> => {
     const type = asString(message.type);
     const id = message.id;
@@ -89,9 +187,16 @@ export function createGuestBridge(options: GuestBridgeOptions): GuestBridge {
       switch (type) {
         case 'hello':
           sendReady();
+          if (options.file) {
+            post({ channel: CHANNEL, v: VERSION, type: 'file-open', payload: options.file });
+          }
           return;
         case 'service-request': {
           reply(id, await options.serviceRequest(payload as GuestServiceRequest));
+          return;
+        }
+        case 'service-status': {
+          reply(id, await options.serviceStatus());
           return;
         }
         case 'storage': {
@@ -117,6 +222,10 @@ export function createGuestBridge(options: GuestBridgeOptions): GuestBridge {
         }
         case 'compose':
           await options.host.compose(payload as Parameters<HostClient['compose']>[0]);
+          reply(id, undefined);
+          return;
+        case 'attach':
+          await options.host.attach(payload as Parameters<HostClient['attach']>[0]);
           reply(id, undefined);
           return;
         case 'prompt':
@@ -156,18 +265,163 @@ export function createGuestBridge(options: GuestBridgeOptions): GuestBridge {
           reply(id, undefined);
           return;
         }
-        case 'resize':
-        case 'status-controls':
-        case 'popover-open':
+        case 'workspace-read': {
+          const query = payload as GuestWorkspaceQuery | null;
+          if (query?.kind === 'projects') reply(id, await options.host.listProjects());
+          else if (query?.kind === 'worktrees')
+            reply(id, await options.host.listWorktrees(asString(query.projectId)));
+          else if (query?.kind === 'sessions')
+            reply(id, await options.host.listSessions(asString(query.projectId)));
+          else throw new Error('missing workspace query');
+          return;
+        }
+        case 'workspace-subscribe': {
+          const sub = payload as { subscriptionId?: unknown; query?: GuestWorkspaceQuery } | null;
+          const subscriptionId = asString(sub?.subscriptionId);
+          const query = sub?.query;
+          if (!subscriptionId || !query) throw new Error('missing workspace subscription');
+          const push = (snapshot: unknown): void => {
+            post({
+              channel: CHANNEL,
+              v: VERSION,
+              type: 'workspace',
+              payload: { subscriptionId, snapshot },
+            });
+          };
+          if (query.kind === 'projects') {
+            await subscribeShared('projects', subscriptionId, (cb) => options.host.onProjects(cb), push);
+          } else if (query.kind === 'worktrees') {
+            await subscribeShared(
+              `worktrees:${query.projectId}`,
+              subscriptionId,
+              (cb) => options.host.onWorktrees(query.projectId, cb),
+              push,
+            );
+          } else {
+            await subscribeShared(
+              `sessions:${query.projectId}`,
+              subscriptionId,
+              (cb) => options.host.onSessions(query.projectId, cb),
+              push,
+            );
+          }
+          reply(id, undefined);
+          return;
+        }
+        case 'workspace-unsubscribe':
+        case 'shells-unsubscribe': {
+          const subscriptionId = asString(
+            (payload as { subscriptionId?: unknown } | null)?.subscriptionId,
+          );
+          subscriptions.get(subscriptionId)?.();
+          subscriptions.delete(subscriptionId);
+          reply(id, undefined);
+          return;
+        }
+        case 'shells-subscribe': {
+          const sub = payload as { subscriptionId?: unknown; scope?: GuestShellsScope } | null;
+          const subscriptionId = asString(sub?.subscriptionId);
+          const scope = sub?.scope;
+          if (!subscriptionId || !scope) throw new Error('missing shells subscription');
+          await subscribeShared(
+            `shells:${JSON.stringify(scope)}`,
+            subscriptionId,
+            (cb) => options.host.onRunningShells(scope, cb),
+            (snapshot) =>
+              post({
+                channel: CHANNEL,
+                v: VERSION,
+                type: 'shells',
+                payload: { subscriptionId, snapshot },
+              }),
+          );
+          reply(id, undefined);
+          return;
+        }
+        case 'shell-output': {
+          const body = payload as {
+            shellId?: unknown;
+            cursor?: unknown;
+            tailBytes?: unknown;
+          } | null;
+          const shellId = asString(body?.shellId);
+          if (!shellId) throw new Error('missing shellId');
+          reply(
+            id,
+            await options.host.readShellOutput(shellId, {
+              ...(typeof body?.cursor === 'number' ? { cursor: body.cursor } : {}),
+              ...(typeof body?.tailBytes === 'number' ? { tailBytes: body.tailBytes } : {}),
+            }),
+          );
+          return;
+        }
+        case 'shell-stop': {
+          const shellId = asString((payload as { shellId?: unknown } | null)?.shellId);
+          if (!shellId) throw new Error('missing shellId');
+          reply(id, await options.host.stopShell(shellId));
+          return;
+        }
+        case 'generate-late-listen':
+          options.onLateGenerateListen?.();
+          return;
+        case 'generate':
+          reply(id, await options.host.generate(payload as GenerateRequest));
+          return;
+        case 'request':
+          reply(id, await options.host.request(payload as GuestRequest));
+          return;
+        case 'session-link':
+          await options.host.sessionLink(payload as AttachIssueRequest);
+          reply(id, undefined);
+          return;
+        case 'open-commit': {
+          const sha = asString((payload as { sha?: unknown } | null)?.sha);
+          if (!sha) throw new Error('missing sha');
+          await options.host.openCommit(sha);
+          reply(id, undefined);
+          return;
+        }
+        case 'open-surface': {
+          const surfaceId = asString((payload as { surfaceId?: unknown } | null)?.surfaceId);
+          if (!surfaceId) throw new Error('missing surfaceId');
+          if (options.openSurface) await options.openSurface(surfaceId);
+          else await options.host.openSurface(surfaceId);
+          reply(id, undefined);
+          return;
+        }
+        case 'oauth-start':
+          await options.host.oauthStart();
+          reply(id, undefined);
+          return;
+        case 'oauth-disconnect':
+          await options.host.oauthDisconnect();
+          reply(id, undefined);
+          return;
+        case 'status-controls': {
+          const controls = (payload as { controls?: unknown } | null)?.controls;
+          await options.host.setStatusControls(
+            controls as Parameters<HostClient['setStatusControls']>[0],
+          );
+          reply(id, undefined);
+          return;
+        }
         case 'popover-close':
         case 'popover-anchor':
-        case 'workspace-unsubscribe':
-        case 'shells-unsubscribe':
+          reply(id, undefined);
+          return;
+        case 'popover-open':
+          fail(id, 'UNSUPPORTED', '嵌入面板暂不支持宿主弹出层，请使用面板内交互');
+          return;
+        case 'resize':
           reply(id, undefined);
           return;
         case 'close':
           reply(id, undefined);
           window.setTimeout(options.close, 40);
+          return;
+        case 'file-change':
+        case 'file-save':
+        case 'file-unsupported':
           return;
         default:
           fail(id, 'UNSUPPORTED', `嵌入的扩展调用了尚未桥接的宿主能力：${type || 'unknown'}`);
@@ -197,8 +451,37 @@ export function createGuestBridge(options: GuestBridgeOptions): GuestBridge {
 
   return {
     sendReady,
+    sendSession(session: unknown): void {
+      post({ channel: CHANNEL, v: VERSION, type: 'session', payload: { session } });
+    },
+    sendSessionLifecycle(event: SessionLifecycleEvent): void {
+      post({ channel: CHANNEL, v: VERSION, type: 'session-lifecycle', payload: event });
+    },
+    sendDirectory(directory: string | null): void {
+      post({ channel: CHANNEL, v: VERSION, type: 'directory', payload: { directory } });
+    },
+    sendConnection(connection: GuestConnection): void {
+      post({ channel: CHANNEL, v: VERSION, type: 'connection', payload: { connection } });
+    },
+    sendSettings(settings: GuestSettings): void {
+      post({ channel: CHANNEL, v: VERSION, type: 'settings', payload: { settings } });
+    },
+    sendItem(item: GuestItem | null): void {
+      post({ channel: CHANNEL, v: VERSION, type: 'item', payload: { item } });
+    },
+    sendGenerateLate(result: unknown): void {
+      post({ channel: CHANNEL, v: VERSION, type: 'generate-late', payload: result });
+    },
     dispose(): void {
       disposed = true;
+      for (const off of subscriptions.values()) {
+        try {
+          off();
+        } catch {
+          /* subscriber already gone */
+        }
+      }
+      subscriptions.clear();
       window.removeEventListener('message', onMessage);
       options.frame.removeEventListener('load', onLoad);
     },

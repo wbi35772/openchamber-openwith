@@ -91,7 +91,21 @@ OpenWith Matrix 的所有可调项都保存在一个 JSON 文件中。设置界�
 | `defaultNamespace` | string | `"default"` | 默认 namespace |
 | `portForwardPool` | number[] | `[18080,18081,18082,18083]` | 可用本地端口池 |
 
-### 3.7 logSources
+### 3.7 marketplace
+
+扩展市场抓取目录与下载仓库元数据（`package.json`、图标）时使用的网络代理。
+
+| 字段 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `proxy` | string | `""` | 代理地址，支持 `http://`、`https://`、`socks5://`、`socks5h://`；留空直连 |
+
+```json
+{ "marketplace": { "proxy": "http://127.0.0.1:10809" } }
+```
+
+只影响扩展市场自身的请求；扩展安装与更新由宿主完成，使用宿主的网络配置。
+
+### 3.8 logSources
 
 日志流标签页可订阅的日志源。
 
@@ -291,6 +305,7 @@ Windows 应用的 `command` 支持任意本机 `.exe`、`.cmd`、`.bat`；在资
   ],
   "sections": [
     { "id": "guests", "kind": "guests", "label": "扩展", "view": "list", "visible": true },
+    { "id": "marketplace", "kind": "marketplace", "label": "扩展市场", "view": "cards", "visible": true },
     { "id": "win11-apps", "kind": "win11-apps", "label": "应用", "view": "cards", "visible": true },
     {
       "id": "group-dev",

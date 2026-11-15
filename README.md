@@ -44,8 +44,15 @@ pinned pages that survive a reload.
   terminal), keep-alive, pinning, drag reorder, and a persistent layout.
 - **Split view** — put a second tab next to the current one, switch direction,
   drag the divider, double-click to reset.
-- **Extensions group** — discover installed OpenChamber guests, enable or hide
-  them, and embed a guest's panel in a tab with a host-issued frame grant.
+- **Extensions group** — discover installed OpenChamber guests, enable, hide or
+  uninstall them, and embed a guest's panel in a tab with a host-issued frame
+  grant.
+- **Extension marketplace** — browse the official directory and GitHub community
+  projects in one place, grouped by category, with stars, last update and
+  repository links; manifests the host accepts install with one click. A curated
+  T0/T1/T2 tier marks must-install, situational and redundant extensions, with
+  matching filters and hover hints. The catalog is cached on disk, so restarts
+  open instantly and refresh in the background.
 - **Windows apps and ShardX** — launch any local `.exe` or PATH command with the
   current project appended, and start/stop ShardX profiles.
 - **WSL2 group** — list distributions, resolve the WSL IP, and open configured
@@ -62,7 +69,8 @@ pinned pages that survive a reload.
   tab.
 - **Layered actions** — workspace actions (split, refresh, settings, new tab)
   stay in the top bar; home tabs, resources and groups live in one “Manage” menu;
-  logs and terminal open from the new-tab menu. On narrow panels the brand name
+  the new-tab menu lists every enabled extension with its icon and version, with
+  URL, logs and terminal entries underneath. On narrow panels the brand name
   collapses and the two menus switch with one click.
 - **Resource management** — one dialog over all 11 default sections: extensions,
   Windows apps, ShardX instances, WSL distros and ports, compose files,
@@ -121,6 +129,7 @@ resource views:
 | Tab | What it does |
 | --- | --- |
 | Extensions | enable, hide, open or embed installed guests |
+| Marketplace | browse official and community extensions; install with one click |
 | Windows apps & ShardX | launch apps with the project directory; start/stop ShardX |
 | WSL2 | show distros and IP; open configured ports |
 | Docker | compose actions and container state |
@@ -136,7 +145,8 @@ custom group automatically gets its own tab.
 
 Tabs:
 
-- **+ New tab** offers home, terminal, log, web, guest and app entries.
+- **+ New tab** lists every enabled extension with its icon and version, plus
+  web, log and terminal entries.
 - Drag a tab to reorder; use the pin control to keep it.
 - **Split** opens a second pane; drag the divider to resize, double-click to
   reset to 50/50.

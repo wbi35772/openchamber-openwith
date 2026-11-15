@@ -17,6 +17,9 @@ import type {
   HomeItem,
   HomeSectionConfig,
   HomeViewMode,
+  MarketplaceCatalog,
+  MarketplaceEntry,
+  MarketplaceTier,
   MatrixSnapshot,
   ShardxInstance,
 } from '../../shared/types.ts';
@@ -43,12 +46,16 @@ export interface HomeActions {
   editTabs(): void;
   editResources(section: ResourceSection): void;
   editCategories(): void;
+  editMarketplaceProxy(): void;
   setHomeView(sectionId: string, view: HomeViewMode): void;
   moveHomeSection(sectionId: string, beforeId: string | null): void;
   openGuest(guest: GuestSummary): void;
   toggleGuest(guest: GuestSummary, enabled: boolean): void;
   updateGuest(guest: GuestSummary): void;
+  uninstallGuest(guest: GuestSummary): void;
   checkGuestUpdates(): void;
+  refreshMarketplace(force: boolean): void;
+  installMarketplace(entry: MarketplaceEntry): void;
   openExternal(url: string): void;
   openApp(app: AppSummary): void;
   openWeb(url: string, title: string): void;
@@ -74,6 +81,9 @@ export interface HomeState {
   loading: boolean;
   error: string | null;
   directory: string | null;
+  marketplace: MarketplaceCatalog | null;
+  marketplaceLoading: boolean;
+  marketplaceError: string | null;
 }
 
 interface SectionRender {
@@ -93,8 +103,13 @@ const forwardForm = {
 
 const pages = new Map<string, number>();
 let guestQuery = '';
+let pendingUninstallId: string | null = null;
+let pendingUninstallAt = 0;
 let guestCategory: string = ALL_CATEGORIES;
 let focusGuestSearch = false;
+let marketplaceQuery = '';
+let marketplaceFilter = 'all';
+let focusMarketplaceSearch = false;
 let activeSectionId: string | null = null;
 let resetScroll = false;
 
@@ -176,6 +191,14 @@ const repoLabel = (url: string): string => {
   if (trimmed.startsWith('github:')) return `github.com/${trimmed.slice(7)}`;
   return trimmed.replace(/^https?:\/\//, '').replace(/\/$/, '');
 };
+
+const repoKeyOf = (url: string | undefined): string =>
+  (url ?? '')
+    .trim()
+    .replace(/^git\+/, '')
+    .replace(/\.git$/i, '')
+    .replace(/\/+$/, '')
+    .toLowerCase();
 
 const guestIconNode = (guest: GuestSummary): HTMLElement => {
   const wrapper = h('span', { class: 'guest-icon' });
@@ -277,6 +300,31 @@ const renderGuests = (snap: MatrixSnapshot, actions: HomeActions): SectionRender
       : null;
     updateButton?.addEventListener('click', (event) => event.stopPropagation());
 
+    const confirming = pendingUninstallId === guest.id;
+    const uninstallButton = button(confirming ? '确认卸载' : '卸载', () => {
+      if (pendingUninstallId === guest.id && Date.now() - pendingUninstallAt < 6_000) {
+        pendingUninstallId = null;
+        pendingUninstallAt = 0;
+        actions.uninstallGuest(guest);
+        return;
+      }
+      pendingUninstallId = guest.id;
+      pendingUninstallAt = Date.now();
+      actions.rerender();
+      window.setTimeout(() => {
+        if (pendingUninstallId === guest.id) {
+          pendingUninstallId = null;
+          pendingUninstallAt = 0;
+          actions.rerender();
+        }
+      }, 6_000);
+    }, {
+      variant: 'danger',
+      class: `guest-uninstall small${confirming ? ' is-confirming' : ''}`,
+      title: confirming ? '再次点击确认卸载' : `卸载 ${guest.name}`,
+    });
+    uninstallButton.addEventListener('click', (event) => event.stopPropagation());
+
     const toggle = h(
       'label',
       {
@@ -347,7 +395,7 @@ const renderGuests = (snap: MatrixSnapshot, actions: HomeActions): SectionRender
           h('div', { class: 'guest-line2' }, [
             repoButton,
             h('span', { class: 'guest-cat-label', text: categoryName }),
-            h('div', { class: 'guest-actions' }, [updateButton, toggle, openButton]),
+            h('div', { class: 'guest-actions' }, [updateButton, toggle, openButton, uninstallButton]),
           ]),
         ]),
       ],
@@ -481,6 +529,318 @@ const renderGuests = (snap: MatrixSnapshot, actions: HomeActions): SectionRender
       }),
       button('分类', actions.editCategories, { title: '编辑扩展分类与名称归属' }),
       button('编辑', () => actions.editResources('guests')),
+    ],
+    body,
+  };
+};
+
+const MARKET_CATEGORY_LABELS: Record<MarketplaceEntry['category'], string> = {
+  tools: '工具与集成',
+  themes: '主题与界面',
+  mcp: 'MCP 与连接器',
+  other: '实验与其他',
+};
+
+const MARKET_TIER_HINTS: Record<MarketplaceTier, string> = {
+  T0: '必装：中枢控制、上下文透视、自动化或成本监控',
+  T1: '按需：需要对应的本地服务或工作流',
+  T2: '冗余或环境不符：已有更强替代，或缺少对应平台',
+};
+
+const MARKET_TIER_TONES: Record<MarketplaceTier, 'info' | 'muted' | 'warn'> = {
+  T0: 'info',
+  T1: 'muted',
+  T2: 'warn',
+};
+
+const marketplaceTierBadge = (tier: MarketplaceTier): HTMLElement => {
+  const element = badge(tier, MARKET_TIER_TONES[tier]);
+  element.title = MARKET_TIER_HINTS[tier];
+  return element;
+};
+
+interface MarketplaceFilter {
+  id: string;
+  label: string;
+  match(entry: MarketplaceEntry): boolean;
+}
+
+const MARKET_FILTERS: MarketplaceFilter[] = [
+  { id: 'all', label: '全部', match: () => true },
+  { id: 'tier-t0', label: 'T0 必装', match: (entry) => entry.tier === 'T0' },
+  { id: 'tier-t1', label: 'T1 按需', match: (entry) => entry.tier === 'T1' },
+  { id: 'tier-t2', label: 'T2 排除', match: (entry) => entry.tier === 'T2' },
+  { id: 'official', label: '官方精选', match: (entry) => entry.source === 'official' },
+  { id: 'github', label: '社区', match: (entry) => entry.source === 'github' },
+  { id: 'tools', label: '工具与集成', match: (entry) => entry.category === 'tools' },
+  { id: 'themes', label: '主题与界面', match: (entry) => entry.category === 'themes' },
+  { id: 'mcp', label: 'MCP 与连接器', match: (entry) => entry.category === 'mcp' },
+  { id: 'other', label: '实验与其他', match: (entry) => entry.category === 'other' },
+];
+
+const formatDay = (value: string | undefined): string => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10);
+  const pad = (part: number): string => String(part).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+const installedGuestFor = (
+  entry: MarketplaceEntry,
+  guests: GuestSummary[],
+): GuestSummary | undefined => {
+  const key = repoKeyOf(entry.repoUrl ?? entry.installUrl);
+  if (key) {
+    const byRepo = guests.find(
+      (guest) => repoKeyOf(guest.originUrl) === key || repoKeyOf(guest.repoUrl) === key,
+    );
+    if (byRepo) return byRepo;
+  }
+  const name = entry.name.trim().toLowerCase();
+  return guests.find(
+    (guest) => guest.id.toLowerCase() === name || guest.name.trim().toLowerCase() === name,
+  );
+};
+
+const marketplaceAvatar = (entry: MarketplaceEntry): HTMLElement => {
+  const tile = h('span', { class: 'guest-icon market-icon' });
+  if (entry.avatarUrl) {
+    const img = h('img', {
+      class: 'guest-icon-img',
+      attrs: {
+        src: entry.avatarUrl,
+        alt: '',
+        loading: 'lazy',
+        referrerpolicy: 'no-referrer',
+      },
+    });
+    ensureIconContrast(img);
+    img.addEventListener(
+      'error',
+      () => {
+        img.remove();
+        tile.classList.add('guest-icon-letter');
+        tile.textContent = (entry.name.trim()[0] ?? '▣').toUpperCase();
+      },
+      { once: true },
+    );
+    tile.append(img);
+    return tile;
+  }
+  const glyph = createGuestIcon(entry.iconGlyph);
+  if (glyph) {
+    tile.append(glyph);
+    return tile;
+  }
+  tile.classList.add('guest-icon-letter');
+  tile.textContent = (entry.name.trim()[0] ?? '▣').toUpperCase();
+  return tile;
+};
+
+const buildMarketCard = (
+  entry: MarketplaceEntry,
+  guests: GuestSummary[],
+  actions: HomeActions,
+): HTMLElement => {
+  const installed = installedGuestFor(entry, guests);
+  const meta: string[] = [];
+  if (entry.owner) meta.push(entry.owner);
+  if (entry.stars) meta.push(`★ ${entry.stars}`);
+  const updated = formatDay(entry.updatedAt);
+  if (updated) meta.push(`更新 ${updated}`);
+
+  const footer = h('div', { class: 'market-actions' });
+  if (installed) {
+    footer.append(badge('已安装', 'ok'));
+    footer.append(
+      button('打开', () => actions.openGuest(installed), {
+        variant: 'primary',
+        class: 'market-button',
+      }),
+    );
+  } else if (entry.installable && entry.installUrl) {
+    footer.append(
+      button('一键安装', () => actions.installMarketplace(entry), {
+        variant: 'primary',
+        class: 'market-button',
+      }),
+    );
+  } else {
+    footer.append(badge(entry.archived ? '已归档' : '仅仓库', 'muted'));
+  }
+  if (entry.repoUrl) {
+    footer.append(
+      button('仓库', () => actions.openExternal(entry.repoUrl ?? ''), {
+        class: 'market-button',
+      }),
+    );
+  }
+  if (entry.homepageUrl) {
+    footer.append(
+      button('主页', () => actions.openExternal(entry.homepageUrl ?? ''), {
+        class: 'market-button',
+      }),
+    );
+  }
+
+  const titleParts: HTMLElement[] = [h('span', { class: 'market-name', text: entry.name })];
+  if (meta.length) titleParts.push(h('span', { class: 'market-meta', text: meta.join(' · ') }));
+
+  const card = h('article', { class: 'market-card' }, [
+    h('div', { class: 'market-card-head' }, [
+      marketplaceAvatar(entry),
+      h('div', { class: 'market-card-title' }, titleParts),
+      h('span', {
+        class: `market-source market-source-${entry.source}`,
+        text: entry.source === 'official' ? '官方' : '社区',
+      }),
+    ]),
+    h('p', {
+      class: 'market-desc',
+      text: entry.descriptionZh || entry.description || '暂无简介',
+    }),
+    h('div', { class: 'market-tags' }, [
+      ...(entry.tier ? [marketplaceTierBadge(entry.tier)] : []),
+      badge(MARKET_CATEGORY_LABELS[entry.category], 'muted'),
+      ...(entry.tags ?? []).slice(0, 3).map((tag) => badge(tag, 'muted')),
+    ]),
+    footer,
+  ]);
+
+  const target = entry.repoUrl ?? entry.homepageUrl;
+  if (target) {
+    card.classList.add('market-card-link');
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('title', `打开 ${entry.name} 的仓库`);
+    const open = (event: Event): void => {
+      if ((event.target as HTMLElement | null)?.closest('button, a')) return;
+      actions.openExternal(target);
+    };
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      open(event);
+    });
+  }
+
+  return card;
+};
+
+const renderMarketplace = (
+  state: HomeState,
+  snap: MatrixSnapshot,
+  actions: HomeActions,
+): SectionRender => {
+  const catalog = state.marketplace;
+  const entries = catalog?.entries ?? [];
+  const installed = new Set(
+    entries
+      .map((entry) => installedGuestFor(entry, snap.guests))
+      .filter((guest): guest is GuestSummary => Boolean(guest))
+      .map((guest) => guest.id),
+  );
+
+  const filter = MARKET_FILTERS.find((item) => item.id === marketplaceFilter) ?? MARKET_FILTERS[0];
+  const needle = marketplaceQuery.trim().toLowerCase();
+  const filtered = entries.filter((entry) => {
+    if (!filter.match(entry)) return false;
+    if (!needle) return true;
+    return `${entry.name} ${entry.description} ${entry.descriptionZh ?? ''} ${entry.owner ?? ''} ${(entry.tags ?? []).join(' ')}`
+      .toLowerCase()
+      .includes(needle);
+  });
+
+  const chips = MARKET_FILTERS.map((item) => {
+    const count = entries.filter(item.match).length;
+    const chip = h('button', {
+      class: `guest-cat${item.id === filter.id ? ' active' : ''}`,
+      attrs: { type: 'button', title: `${item.label} · ${count}` },
+      text: `${item.label} ${count}`,
+    });
+    chip.addEventListener('click', () => {
+      marketplaceFilter = item.id;
+      pages.delete('marketplace');
+      actions.rerender();
+    });
+    return chip;
+  });
+
+  const search = h('input', {
+    class: 'input search market-search',
+    attrs: {
+      type: 'search',
+      placeholder: '搜索扩展、作者或标签',
+      value: marketplaceQuery,
+      'aria-label': '搜索扩展市场',
+    },
+  }) as HTMLInputElement;
+  search.addEventListener('input', () => {
+    marketplaceQuery = search.value;
+    pages.delete('marketplace');
+    actions.rerender();
+    focusMarketplaceSearch = true;
+  });
+
+  const badges: HTMLElement[] = [];
+  if (catalog) {
+    badges.push(
+      badge(`${entries.length} 个扩展`, 'muted'),
+      badge(`${entries.filter((entry) => entry.installable).length} 个可安装`, 'info'),
+    );
+    const updated = formatDay(new Date(catalog.updatedAt).toISOString());
+    if (updated) badges.push(badge(`目录 ${updated}`, 'muted'));
+  }
+
+  const body: Child[] = [];
+  if (state.marketplaceError) {
+    body.push(
+      h('div', { class: 'market-error' }, [
+        errorText(state.marketplaceError),
+        button('重新加载', () => actions.refreshMarketplace(false), {
+          variant: 'primary',
+          class: 'market-retry',
+        }),
+      ]),
+    );
+  }
+  if (!catalog && state.marketplaceLoading) {
+    body.push(empty('正在获取扩展市场…'));
+  } else if (!catalog) {
+    body.push(empty('扩展目录还没有加载'));
+  } else {
+    body.push(h('div', { class: 'guest-cats' }, chips));
+    body.push(h('div', { class: 'guest-toolbar' }, [search, ...badges]));
+    if (filtered.length) {
+      body.push(
+        h(
+          'div',
+          { class: 'market-grid' },
+          filtered.map((entry) => buildMarketCard(entry, snap.guests, actions)),
+        ),
+      );
+    } else {
+      body.push(empty('没有匹配的扩展'));
+    }
+  }
+
+  const installable = entries.filter((entry) => entry.installable).length;
+  return {
+    subtitle: catalog
+      ? `${entries.length} 个扩展 · ${installable} 个可一键安装 · ${installed.size} 个已安装`
+      : state.marketplaceLoading
+        ? '正在同步扩展目录…'
+        : '官方目录与社区仓库聚合',
+    count: entries.length,
+    toolbar: [
+      button('代理设置', () => actions.editMarketplaceProxy(), {
+        title: '设置扩展市场抓取与下载使用的代理',
+      }),
+      button('刷新目录', () => actions.refreshMarketplace(true), {
+        title: '重新抓取官方目录与 GitHub 社区扩展',
+      }),
     ],
     body,
   };
@@ -1050,11 +1410,14 @@ const renderCustomGroup = (
 const renderSection = (
   section: HomeSectionConfig,
   snap: MatrixSnapshot,
+  state: HomeState,
   actions: HomeActions,
 ): SectionRender => {
   switch (section.kind) {
     case 'guests':
       return renderGuests(snap, actions);
+    case 'marketplace':
+      return renderMarketplace(state, snap, actions);
     case 'win11-apps':
       return renderWin11Apps(snap, actions);
     case 'shardx':
@@ -1074,12 +1437,18 @@ const renderSection = (
   }
 };
 
-const sectionCount = (section: HomeSectionConfig, snap: MatrixSnapshot): number => {
+const sectionCount = (
+  section: HomeSectionConfig,
+  snap: MatrixSnapshot,
+  state: HomeState,
+): number => {
   switch (section.kind) {
     case 'guests': {
       const hidden = new Set(snap.config.groups.guests.hidden);
       return snap.guests.filter((guest) => !hidden.has(guest.id)).length;
     }
+    case 'marketplace':
+      return state.marketplace?.entries.length ?? 0;
     case 'win11-apps':
       return snap.apps.length;
     case 'shardx':
@@ -1118,6 +1487,7 @@ const renderTabBar = (
   sections: HomeSectionConfig[],
   activeId: string | null,
   snap: MatrixSnapshot,
+  state: HomeState,
   actions: HomeActions,
 ): HTMLElement => {
   const bar = h('div', {
@@ -1149,7 +1519,7 @@ const renderTabBar = (
       },
       [
         h('span', { class: 'home-tab-label', text: section.label }),
-        h('span', { class: 'home-tab-count', text: String(sectionCount(section, snap)) }),
+        h('span', { class: 'home-tab-count', text: String(sectionCount(section, snap, state)) }),
       ],
     );
     tab.addEventListener('dragstart', (event) => {
@@ -1279,8 +1649,8 @@ export function mountHome(container: HTMLElement, state: HomeState, actions: Hom
       }
       const active = sections.find((section) => section.id === activeSectionId) ?? sections[0];
       if (active) {
-        root.append(renderTabBar(sections, active.id, snap, actions));
-        root.append(renderPanel(active, renderSection(active, snap, actions), actions));
+        root.append(renderTabBar(sections, active.id, snap, state, actions));
+        root.append(renderPanel(active, renderSection(active, snap, state, actions), actions));
       }
     }
   } else {
@@ -1290,6 +1660,12 @@ export function mountHome(container: HTMLElement, state: HomeState, actions: Hom
   if (focusGuestSearch) {
     focusGuestSearch = false;
     const input = root.querySelector<HTMLInputElement>('.guest-search');
+    input?.focus();
+    input?.setSelectionRange(input.value.length, input.value.length);
+  }
+  if (focusMarketplaceSearch) {
+    focusMarketplaceSearch = false;
+    const input = root.querySelector<HTMLInputElement>('.market-search');
     input?.focus();
     input?.setSelectionRange(input.value.length, input.value.length);
   }

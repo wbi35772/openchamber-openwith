@@ -1144,6 +1144,95 @@ select.input {
   background: var(--mx-hover);
 }
 
+.new-tab-menu {
+  width: 300px;
+  gap: 6px;
+}
+
+.menu-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.menu-count {
+  color: var(--mx-subtle);
+  font-size: 10px;
+}
+
+.menu-guests {
+  max-height: 264px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.menu-guest {
+  gap: 8px;
+  padding: 5px 6px;
+}
+
+.menu-guest-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+}
+
+.menu-guest-icon .guest-icon-img {
+  width: 20px;
+  height: 20px;
+}
+
+.menu-guest-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.menu-guest-name {
+  overflow: hidden;
+  color: var(--mx-fg);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-guest-meta {
+  overflow: hidden;
+  color: var(--mx-subtle);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-empty {
+  margin: 2px 0 4px;
+  color: var(--mx-subtle);
+  font-size: 11px;
+}
+
+.menu-divider {
+  height: 1px;
+  margin: 2px 0;
+  background: var(--mx-border);
+}
+
+.market-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--mx-danger) 45%, var(--mx-border));
+  border-radius: var(--mx-radius);
+  background: color-mix(in srgb, var(--mx-danger) 8%, transparent);
+}
+
+.market-error .error-text {
+  margin: 0;
+}
+
 /* ---------- modal ---------- */
 
 .modal-overlay {
@@ -1300,6 +1389,9 @@ button.stat:hover {
   align-items: flex-start;
 }
 
+/* One fixed light chip for every logo: full-bleed art, transparent glyphs and
+   letter fallbacks share the same tile in both host themes. White monochrome
+   glyphs are inverted by iconContrast.ts instead of switching the backdrop. */
 .guest-icon {
   display: grid;
   place-items: center;
@@ -1308,8 +1400,11 @@ button.stat:hover {
   height: 28px;
   overflow: hidden;
   border-radius: 8px;
-  background: var(--mx-selection);
-  color: var(--mx-fg);
+  background: #f2f3f6;
+  box-shadow:
+    inset 0 0 0 1px rgba(15, 18, 24, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  color: #2b2f36;
 }
 
 .guest-icon-img {
@@ -1318,16 +1413,8 @@ button.stat:hover {
   object-fit: contain;
 }
 
-/* Logos that are black-on-transparent (or white-on-transparent) get a backdrop
-   that matches their own ink, so they stay readable on either host theme. */
-.guest-icon.guest-icon-on-light {
-  background: #fbfbfd;
-  box-shadow: inset 0 0 0 1px var(--mx-border);
-}
-
-.guest-icon.guest-icon-on-dark {
-  background: #171b22;
-  box-shadow: inset 0 0 0 1px var(--mx-border);
+.guest-icon.guest-icon-ink-light .guest-icon-img {
+  filter: invert(1);
 }
 
 .guest-icon svg {
@@ -2693,6 +2780,254 @@ button.stat:hover {
   font-size: 10px;
 }
 
+/* ---------- extension marketplace ---------- */
+
+.guest-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 9px;
+}
+
+.guest-toolbar .search {
+  flex: 1 1 170px;
+  min-width: 0;
+}
+
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 8px;
+}
+
+.market-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--mx-border);
+  border-radius: 10px;
+  background: var(--mx-elevated);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.market-card:hover {
+  border-color: color-mix(in srgb, var(--mx-primary) 38%, var(--mx-border));
+}
+
+.market-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.market-card-title {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.market-name {
+  overflow: hidden;
+  color: var(--mx-fg);
+  font-size: 12px;
+  font-weight: 620;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-meta {
+  overflow: hidden;
+  color: var(--mx-subtle);
+  font-size: 10px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-source {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+}
+
+.market-source-official {
+  background: color-mix(in srgb, var(--mx-primary) 16%, transparent);
+  color: color-mix(in srgb, var(--mx-primary) 78%, var(--mx-fg));
+}
+
+.market-source-github {
+  background: color-mix(in srgb, var(--mx-fg) 8%, transparent);
+  color: var(--mx-muted);
+}
+
+.market-desc {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--mx-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.market-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 38px;
+  overflow: hidden;
+}
+
+.market-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.market-actions .badge {
+  padding: 1px 6px;
+  font-size: 9px;
+}
+
+.market-button {
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+.market-card-link {
+  cursor: pointer;
+}
+
+.market-card-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--mx-primary) 70%, transparent);
+  outline-offset: 1px;
+}
+
+/* list: one extension per row, description under the header */
+.home-panel-body.view-list .market-grid {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.home-panel-body.view-list .market-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head actions'
+    'desc desc';
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 4px;
+  padding: 7px 9px;
+}
+
+.home-panel-body.view-list .market-card-head {
+  grid-area: head;
+}
+
+.home-panel-body.view-list .market-desc {
+  grid-area: desc;
+  -webkit-line-clamp: 2;
+}
+
+.home-panel-body.view-list .market-tags {
+  display: none;
+}
+
+.home-panel-body.view-list .market-actions {
+  grid-area: actions;
+  margin: 0;
+  padding: 0;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+/* compact: dense rows that still keep the logo and a one-line summary */
+.home-panel-body.view-compact .market-grid {
+  grid-template-columns: 1fr;
+  gap: 3px;
+}
+
+.home-panel-body.view-compact .market-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head actions'
+    'desc desc';
+  align-items: center;
+  gap: 1px 8px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: transparent;
+}
+
+.home-panel-body.view-compact .market-card:hover {
+  background: color-mix(in srgb, var(--mx-primary) 5%, var(--mx-elevated));
+}
+
+.home-panel-body.view-compact .market-card-head {
+  grid-area: head;
+}
+
+.home-panel-body.view-compact .market-card .market-icon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.home-panel-body.view-compact .market-card .market-icon .guest-icon-img {
+  width: 16px;
+  height: 16px;
+}
+
+.home-panel-body.view-compact .market-card .market-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.home-panel-body.view-compact .market-name {
+  font-size: 11.5px;
+}
+
+.home-panel-body.view-compact .market-meta,
+.home-panel-body.view-compact .market-tags,
+.home-panel-body.view-compact .market-source {
+  display: none;
+}
+
+.home-panel-body.view-compact .market-desc {
+  display: block;
+  grid-area: desc;
+  overflow: hidden;
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-line-clamp: unset;
+}
+
+.home-panel-body.view-compact .market-actions {
+  grid-area: actions;
+  margin: 0;
+  padding: 0;
+  flex-wrap: nowrap;
+}
+
 /* ---------- home tab editor ---------- */
 
 .tabs-editor {
@@ -2821,6 +3156,11 @@ button.stat:hover {
   .guest-cat {
     padding: 3px 7px;
     font-size: 10px;
+  }
+
+  .market-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 6px;
   }
 
   .guest-line2 {

@@ -78,6 +78,7 @@ const loadDefaults = async (): Promise<MatrixConfig> => {
 
 const HOME_SECTION_KINDS: HomeSectionKind[] = [
   'guests',
+  'marketplace',
   'win11-apps',
   'shardx',
   'wsl-ports',
@@ -214,6 +215,20 @@ const normalizeSections = (
 };
 
 /** Keep a merged config structurally usable even if the user file is partial. */
+const PROXY_URL_PATTERN = /^(https?|socks5h?):\/\//i;
+
+const normalizeProxyUrl = (value: unknown): string => {
+  if (typeof value !== 'string') return '';
+  const text = value.trim();
+  if (!text || !PROXY_URL_PATTERN.test(text)) return '';
+  try {
+    const parsed = new URL(text);
+    return parsed.hostname ? text : '';
+  } catch {
+    return '';
+  }
+};
+
 const normalize = (config: MatrixConfig): MatrixConfig => {
   const next = config;
   next.version = CONFIG_VERSION;
@@ -279,6 +294,8 @@ const normalize = (config: MatrixConfig): MatrixConfig => {
   if (!Array.isArray(groups.cloud.bookmarks)) groups.cloud.bookmarks = [];
   if (!Array.isArray(groups.cloud.webhooks)) groups.cloud.webhooks = [];
   if (!Array.isArray(next.settings.logSources)) next.settings.logSources = [];
+  next.settings.marketplace ??= { proxy: '' };
+  next.settings.marketplace.proxy = normalizeProxyUrl(next.settings.marketplace.proxy);
   return next;
 };
 

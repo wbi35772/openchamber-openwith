@@ -1,6 +1,6 @@
 {
   "name": "openchamber-openwith-matrix",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "OpenWith Matrix & Tab OS: a browser-style multi-tab workspace inside OpenChamber for guest extensions, Windows apps, ShardX profiles, WSL2 services, Docker, Kubernetes and cloud links.",
@@ -36,6 +36,8 @@
       "openchamber": ">=2.0.0"
     },
     "contributes": {
+      "capabilities": ["sessions", "prompt", "files", "model"],
+      "filesystem": ["~/**", "/.git/**", "/workspace/**"],
       "panel": {
         "id": "openwith",
         "name": "OpenWith Matrix",
@@ -61,6 +63,7 @@
             "bash",
             "sh",
             "git",
+            "curl",
             "docker",
             "kubectl",
             "code",

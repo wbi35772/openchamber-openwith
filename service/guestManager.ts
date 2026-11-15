@@ -31,6 +31,7 @@ interface GuestRecord {
   path?: string;
   entry?: string;
   pageEntry?: string;
+  fileEditors?: Array<{ id?: string; title?: string; entry?: string; match?: string[] }>;
   storageId?: string;
   origin?: { url?: string; ref?: string };
   update?: { version?: string };
@@ -74,6 +75,7 @@ const toSummary = (record: GuestRecord): GuestSummary => ({
   ...(record.path ? { path: record.path } : {}),
   ...(record.entry ? { entry: record.entry } : {}),
   ...(record.pageEntry ? { pageEntry: record.pageEntry } : {}),
+  ...(record.fileEditors?.length ? { fileEditors: record.fileEditors } : {}),
   ...(record.storageId ? { storageId: record.storageId } : {}),
   ...(record.capabilities
     ? {
@@ -268,6 +270,21 @@ export class GuestManager {
     return result;
   }
 
+  /** Install a Git or ZIP guest through the host, then drop cached metadata. */
+  async install(url: string): Promise<unknown> {
+    const result = await this.request('POST', '/api/guests', { url }, 180_000);
+    this.updateCache = null;
+    this.metaCache.clear();
+    return result;
+  }
+
+  /** Uninstall a guest through the host, then drop cached metadata. */
+  async uninstall(id: string): Promise<void> {
+    await this.request('DELETE', `/api/guests/${encodeURIComponent(id)}`, undefined, 60_000);
+    this.updateCache = null;
+    this.metaCache.clear();
+  }
+
   async frameGrant(id: string, entry = 'panel/index.html'): Promise<GuestFrameGrant> {
     const grant = await this.request<{ grant?: string; expiresAt?: number }>(
       'POST',
@@ -308,6 +325,16 @@ export class GuestManager {
       status: Number(answer.status ?? 0),
       body: typeof answer.body === 'string' ? answer.body : JSON.stringify(answer.body ?? ''),
     };
+  }
+
+  async serviceStatus(id: string): Promise<{ status: string }> {
+    const answer = await this.request<{ status?: unknown }>(
+      'GET',
+      `/api/guests/${encodeURIComponent(id)}/service/status`,
+    );
+    const status = typeof answer.status === 'string' ? answer.status : 'stopped';
+    const known = status === 'stopped' || status === 'starting' || status === 'ready' || status === 'failed';
+    return { status: known ? status : 'stopped' };
   }
 
   async storage(id: string, body: unknown): Promise<unknown> {

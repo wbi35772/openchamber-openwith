@@ -28,6 +28,7 @@ import type {
   LogOutput,
   LogSourceInfo,
   LogSubscriptionInfo,
+  MarketplaceCatalog,
   MatrixConfig,
   MatrixSnapshot,
   ShardxInstance,
@@ -46,7 +47,10 @@ import { openExtensionCategories } from './views/extensionCategoriesView.ts';
 import { openHomeGroups } from './views/homeGroupsView.ts';
 import { openHomeTabs } from './views/homeTabsView.ts';
 import { openResourceEditor, type ResourceSection } from './views/resourceEditorView.ts';
+import { openMarketplaceProxyModal } from './views/marketplaceProxyView.ts';
 import { createGuestBridge, type GuestBridge } from './guestBridge.ts';
+import { createGuestIcon } from './extensionIcons.ts';
+import { ensureIconContrast } from './iconContrast.ts';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -73,10 +77,19 @@ let config: MatrixConfig | null = null;
 let configPath = '';
 let snapshot: MatrixSnapshot | null = null;
 let logSources: LogSourceInfo[] = [];
-let homeState: HomeState = { snapshot: null, loading: true, error: null, directory: null };
+let homeState: HomeState = {
+  snapshot: null,
+  loading: true,
+  error: null,
+  directory: null,
+  marketplace: null,
+  marketplaceLoading: false,
+  marketplaceError: null,
+};
 let tabs: TabManager | null = null;
 let shell: Shell | null = null;
-let refreshing = false;
+const guestBridges = new Set<GuestBridge>();
+let refreshInFlight: Promise<void> | null = null;
 let guestUpdateCheckStarted = false;
 let tabMenu: HTMLElement | null = null;
 let toastTimer: number | null = null;
@@ -180,12 +193,27 @@ const guestGlyph = (guest: GuestSummary): string => {
 };
 
 const openGuest = (guest: GuestSummary): void => {
+  const fileEditor = guest.entry ? undefined : guest.fileEditors?.find((item) => item.entry?.trim());
   tabs?.create({
     kind: 'guest-extension',
     title: guest.name,
     icon: guestGlyph(guest),
-    payload: { guestId: guest.id },
+    payload: {
+      guestId: guest.id,
+      entry: guest.entry ?? fileEditor?.entry ?? '',
+      ...(fileEditor ? { fileEditor: true } : {}),
+    },
   });
+};
+
+const closeGuestTabs = (guestId: string): void => {
+  if (!tabs) return;
+  for (const tab of [...tabs.getState().tabs]) {
+    if (tab.kind !== 'guest-extension') continue;
+    if (String(tab.payload.guestId ?? '') !== guestId) continue;
+    if (tab.pinned) tabs.togglePin(tab.id);
+    tabs.close(tab.id);
+  }
 };
 
 const openLogs = (): void => {
@@ -219,6 +247,19 @@ const homeActions: HomeActions = {
   editTabs: () => openHomeTabsEditor(),
   editResources: (section) => openResources(section),
   editCategories: () => openExtensionCategoriesEditor(),
+  editMarketplaceProxy: () => {
+    openMarketplaceProxyModal({
+      proxy: config?.settings.marketplace.proxy ?? '',
+      onSave: async (proxy) => {
+        config = await request<MatrixConfig>('PUT', '/config', {
+          settings: { marketplace: { proxy } },
+        });
+        notify(proxy ? `扩展市场代理已设为 ${proxy}` : '扩展市场已改为直连', 'ok');
+        void loadMarketplace(true);
+      },
+      onClose: () => {},
+    });
+  },
   setHomeView: (sectionId, view) => setHomeView(sectionId, view),
   moveHomeSection: (sectionId, beforeId) => moveHomeSection(sectionId, beforeId),
   openGuest,
@@ -233,11 +274,36 @@ const homeActions: HomeActions = {
       request('POST', `/guests/${encodeURIComponent(guest.id)}/update`),
     );
   },
+  uninstallGuest: (guest) => {
+    notify(`正在卸载 ${guest.name}…`, 'info');
+    void (async () => {
+      try {
+        await request('DELETE', `/guests/${encodeURIComponent(guest.id)}`);
+        closeGuestTabs(guest.id);
+        notify(`已卸载 ${guest.name}`, 'ok');
+      } catch (error) {
+        notify(`卸载 ${guest.name} 失败：${messageOf(error)}`, 'error');
+      } finally {
+        void refreshSnapshot(false);
+      }
+    })();
+  },
   checkGuestUpdates: () => {
     notify('正在检查扩展更新…', 'info');
     void runAction('检查扩展更新', () =>
       request('POST', '/guests/updates/check', { force: true }),
     );
+  },
+  refreshMarketplace: (force) => {
+    void loadMarketplace(force);
+  },
+  installMarketplace: (entry) => {
+    if (!entry.installUrl) return;
+    notify(`正在安装 ${entry.name}…`, 'info');
+    void runAction(`安装 ${entry.name}`, async () => {
+      await request('POST', '/guests/install', { url: entry.installUrl });
+      await loadMarketplace(false);
+    });
   },
   openExternal: (url) => {
     void host.openUrl(url).catch((error: unknown) => {
@@ -317,6 +383,40 @@ const createGuestPane = (tab: WorkspaceTab): PaneRecord => {
   const frame = h('iframe', { class: 'guest-frame', attrs: { title: tab.title } });
   const status = h('span', { class: 'pane-status', text: '获取访问授权…' });
   const guestId = String(tab.payload.guestId ?? '');
+  const payloadEntry = String(tab.payload.entry ?? '').trim();
+  // Tabs restored from before file-editor support carry no flag; a guest with
+  // no panel entry but a declared file editor is one all the same.
+  const isFileEditorGuest = (): boolean => {
+    if (tab.payload.fileEditor === true) return true;
+    const guest = snapshot?.guests.find((item) => item.id === guestId);
+    return !!guest && !guest.entry?.trim() && (guest.fileEditors?.length ?? 0) > 0;
+  };
+  const fileEditorDocument = (): {
+    path: string;
+    name: string;
+    readOnly: boolean;
+    encoding: 'text';
+    content: string;
+  } => {
+    const guest = snapshot?.guests.find((item) => item.id === guestId);
+    const pattern = guest?.fileEditors?.find((item) => item.entry?.trim())?.match?.[0]?.trim();
+    const suffix = pattern?.includes('*') ? pattern.replace('*', '') : '.excalidraw';
+    const name = `untitled${suffix}`;
+    return { path: name, name, readOnly: false, encoding: 'text', content: '' };
+  };
+  const panelEntry = async (): Promise<string> => {
+    if (payloadEntry) return payloadEntry;
+    let guest = snapshot?.guests.find((item) => item.id === guestId);
+    if (!guest?.entry && !guest?.fileEditors?.length) {
+      await refreshSnapshot(false);
+      guest = snapshot?.guests.find((item) => item.id === guestId);
+    }
+    return (
+      guest?.entry?.trim() ||
+      guest?.fileEditors?.find((item) => item.entry?.trim())?.entry?.trim() ||
+      'panel/index.html'
+    );
+  };
   const body = h('div', { class: 'pane-body guest-body' });
   let timer: number | null = null;
   let grantUrl = '';
@@ -325,6 +425,7 @@ const createGuestPane = (tab: WorkspaceTab): PaneRecord => {
   const load = async (): Promise<void> => {
     if (timer !== null) window.clearTimeout(timer);
     timer = null;
+    if (bridge) guestBridges.delete(bridge);
     bridge?.dispose();
     bridge = null;
     status.textContent = '获取访问授权…';
@@ -332,26 +433,43 @@ const createGuestPane = (tab: WorkspaceTab): PaneRecord => {
       const grant = await request<GuestFrameGrant>(
         'POST',
         `/guests/${encodeURIComponent(guestId)}/frame-grant`,
-        { entry: 'panel/index.html' },
+        { entry: await panelEntry() },
       );
       grantUrl = grant.url;
       bridge = createGuestBridge({
         frame,
         ready: () => ready,
         host,
+        ...(isFileEditorGuest() ? { file: fileEditorDocument() } : {}),
         serviceRequest: (payload) =>
           request<GuestServiceResult>(
             'POST',
             `/guests/${encodeURIComponent(guestId)}/service-request`,
             payload,
           ),
+        serviceStatus: () =>
+          request<{ status: string }>(
+            'GET',
+            `/guests/${encodeURIComponent(guestId)}/service-status`,
+          ),
         storage: (payload) =>
           request<unknown>('POST', `/guests/${encodeURIComponent(guestId)}/storage`, payload),
+        openSurface: async (surfaceId) => {
+          const plugin = surfaceId.startsWith('plugin:')
+            ? surfaceId.slice('plugin:'.length)
+            : '';
+          const target = plugin
+            ? homeState.snapshot?.guests.find((entry) => entry.id === plugin)
+            : undefined;
+          if (target) openGuest(target);
+          else void host.openSurface(surfaceId);
+        },
         close: () => closeTab(tab.id),
         onStatus: (text) => {
           status.textContent = text;
         },
       });
+      guestBridges.add(bridge);
       frame.src = grant.url;
       status.textContent = '加载扩展…';
       const ttl = Math.max(5000, grant.expiresAt - Date.now() - 5000);
@@ -402,6 +520,7 @@ const createGuestPane = (tab: WorkspaceTab): PaneRecord => {
     el,
     cleanup: () => {
       if (timer !== null) window.clearTimeout(timer);
+      if (bridge) guestBridges.delete(bridge);
       bridge?.dispose();
       bridge = null;
       frame.src = 'about:blank';
@@ -772,29 +891,32 @@ const renderHome = (): void => {
   if (record) mountHome(record.el, homeState, homeActions);
 };
 
-const refreshSnapshot = async (showLoading: boolean): Promise<void> => {
-  if (refreshing) return;
-  refreshing = true;
-  if (showLoading) {
-    homeState = { ...homeState, loading: true, error: null };
-    renderHome();
-  }
-  try {
-    snapshot = await request<MatrixSnapshot>('GET', '/snapshot');
-    homeState = {
-      snapshot,
-      loading: false,
-      error: null,
-      directory: ready?.directory ?? null,
-    };
-  } catch (error) {
-    homeState = { ...homeState, loading: false, error: messageOf(error) };
-  } finally {
-    refreshing = false;
-    renderHome();
-    renderStatus();
-    if (snapshot && !guestUpdateCheckStarted) autoCheckGuestUpdates();
-  }
+const refreshSnapshot = (showLoading: boolean): Promise<void> => {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    if (showLoading) {
+      homeState = { ...homeState, loading: true, error: null };
+      renderHome();
+    }
+    try {
+      snapshot = await request<MatrixSnapshot>('GET', '/snapshot');
+      homeState = {
+        ...homeState,
+        snapshot,
+        loading: false,
+        error: null,
+        directory: ready?.directory ?? null,
+      };
+    } catch (error) {
+      homeState = { ...homeState, loading: false, error: messageOf(error) };
+    } finally {
+      refreshInFlight = null;
+      renderHome();
+      renderStatus();
+      if (snapshot && !guestUpdateCheckStarted) autoCheckGuestUpdates();
+    }
+  })();
+  return refreshInFlight;
 };
 
 const autoCheckGuestUpdates = (): void => {
@@ -805,6 +927,42 @@ const autoCheckGuestUpdates = (): void => {
     .catch(() => {
       /* the visible 检查更新 button remains available */
     });
+};
+
+const loadMarketplace = async (force: boolean): Promise<void> => {
+  if (homeState.marketplaceLoading) return;
+  homeState = { ...homeState, marketplaceLoading: true, marketplaceError: null };
+  renderHome();
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const catalog = await request<MarketplaceCatalog>(
+        'GET',
+        `/marketplace${force ? '?refresh=1' : ''}`,
+      );
+      homeState = {
+        ...homeState,
+        marketplace: catalog,
+        marketplaceLoading: false,
+        marketplaceError: null,
+      };
+      renderHome();
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) {
+        // The service keeps building after the host proxy times out, so a
+        // short retry usually lands on the finished catalog.
+        await new Promise((resolve) => window.setTimeout(resolve, 2_000));
+      }
+    }
+  }
+  homeState = {
+    ...homeState,
+    marketplaceLoading: false,
+    marketplaceError: messageOf(lastError),
+  };
+  renderHome();
 };
 
 const renderStatus = (): void => {
@@ -1064,6 +1222,27 @@ const openHomeManageMenu = (anchor: HTMLElement): void => {
   }, 0);
 };
 
+const newMenuIcon = (guest: GuestSummary): HTMLElement => {
+  const tile = h('span', { class: 'guest-icon menu-guest-icon' });
+  if (guest.iconData) {
+    const img = h('img', {
+      class: 'guest-icon-img',
+      attrs: { src: guest.iconData, alt: '', loading: 'lazy' },
+    }) as HTMLImageElement;
+    tile.append(img);
+    ensureIconContrast(img);
+    return tile;
+  }
+  const glyph = createGuestIcon(guest.icon);
+  if (glyph) {
+    tile.append(glyph);
+    return tile;
+  }
+  tile.classList.add('guest-icon-letter');
+  tile.textContent = Array.from(guest.name.trim())[0] ?? '▣';
+  return tile;
+};
+
 const toggleNewMenu = (): void => {
   if (!shell) return;
   const anchor = shell.newButton;
@@ -1072,12 +1251,55 @@ const toggleNewMenu = (): void => {
     return;
   }
   if (tabMenu) closeMenu();
-  const menu = h('div', { class: 'tab-menu' });
+  const menu = h('div', { class: 'tab-menu new-tab-menu' });
+
+  const enabledGuests = (snapshot?.guests ?? []).filter((guest) => guest.enabled);
+  menu.append(
+    h('div', { class: 'menu-section-head' }, [
+      h('span', { class: 'menu-label', text: '已启用扩展' }),
+      h('span', { class: 'menu-count', text: String(enabledGuests.length) }),
+    ]),
+  );
+  if (enabledGuests.length) {
+    const list = h('div', { class: 'menu-guests' });
+    for (const guest of enabledGuests) {
+      list.append(
+        h(
+          'button',
+          {
+            class: 'menu-guest',
+            attrs: { type: 'button', title: `打开 ${guest.name}` },
+            on: {
+              click: () => {
+                openGuest(guest);
+                closeMenu();
+              },
+            },
+          },
+          [
+            newMenuIcon(guest),
+            h('span', { class: 'menu-guest-text' }, [
+              h('span', { class: 'menu-guest-name', text: guest.name }),
+              h('span', {
+                class: 'menu-guest-meta',
+                text: guest.version ? `v${guest.version}` : (guest.source ?? '本地扩展'),
+              }),
+            ]),
+          ],
+        ),
+      );
+    }
+    menu.append(list);
+  } else {
+    menu.append(h('p', { class: 'menu-empty', text: '没有已启用的扩展' }));
+  }
+
   const urlInput = h('input', {
     class: 'input',
     attrs: { type: 'url', placeholder: 'https://…', spellcheck: 'false' },
   });
   menu.append(
+    h('div', { class: 'menu-divider' }),
     h('div', { class: 'menu-row' }, [
       urlInput,
       button(
@@ -1102,27 +1324,9 @@ const toggleNewMenu = (): void => {
       }),
     ]),
   );
-  const guests = snapshot?.guests ?? [];
-  if (guests.length) {
-    menu.append(h('div', { class: 'menu-label', text: 'Guest 扩展' }));
-    const list = h('div', { class: 'menu-guests' });
-    for (const guest of guests.slice(0, 24)) {
-      list.append(
-        button(
-          guest.name,
-          () => {
-            openGuest(guest);
-            closeMenu();
-          },
-          { class: 'menu-guest' },
-        ),
-      );
-    }
-    menu.append(list);
-  }
   document.body.append(menu);
   const rect = shell.newButton.getBoundingClientRect();
-  menu.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 340))}px`;
+  menu.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 308))}px`;
   menu.style.top = `${rect.bottom + 6}px`;
   tabMenu = menu;
   menuAnchor = anchor;
@@ -1332,6 +1536,31 @@ const boot = async (): Promise<void> => {
       resolve(context);
     });
   });
+  host.onSession((session) => {
+    if (ready) ready = { ...ready, session };
+    for (const bridge of guestBridges) bridge.sendSession(session);
+  });
+  host.onDirectory((directory) => {
+    if (ready) ready = { ...ready, directory };
+    for (const bridge of guestBridges) bridge.sendDirectory(directory);
+  });
+  host.onSessionLifecycle((event) => {
+    for (const bridge of guestBridges) bridge.sendSessionLifecycle(event);
+  });
+  host.onConnection((connection) => {
+    if (ready) ready = { ...ready, connection };
+    for (const bridge of guestBridges) bridge.sendConnection(connection);
+  });
+  host.onSettings((settings) => {
+    if (ready) ready = { ...ready, settings };
+    for (const bridge of guestBridges) bridge.sendSettings(settings);
+  });
+  host.onItem((item) => {
+    for (const bridge of guestBridges) bridge.sendItem(item);
+  });
+  host.onLateGenerateResult((result) => {
+    for (const bridge of guestBridges) bridge.sendGenerateLate(result);
+  });
   applyHostReady(ready, document.documentElement);
   watchReadableTheme(document.documentElement);
   shell = buildShell();
@@ -1351,6 +1580,7 @@ const boot = async (): Promise<void> => {
   await tabs.load();
   render();
   await refreshSnapshot(true);
+  void loadMarketplace(false);
   try {
     logSources = await request<LogSourceInfo[]>('GET', '/logs/sources');
   } catch {

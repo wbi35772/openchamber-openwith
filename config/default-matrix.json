@@ -34,6 +34,9 @@
       "defaultNamespace": "default",
       "portForwardPool": [18080, 18081, 18082, 18083]
     },
+    "marketplace": {
+      "proxy": ""
+    },
     "logSources": [
       {
         "id": "service-log",
@@ -236,6 +239,7 @@
     "groups": [],
     "sections": [
       { "id": "guests", "kind": "guests", "label": "扩展", "view": "list", "visible": true },
+      { "id": "marketplace", "kind": "marketplace", "label": "扩展市场", "view": "cards", "visible": true },
       { "id": "win11-apps", "kind": "win11-apps", "label": "应用", "view": "cards", "visible": true },
       { "id": "shardx", "kind": "shardx", "label": "ShardX", "view": "list", "visible": true },
       { "id": "wsl-ports", "kind": "wsl-ports", "label": "WSL 端口", "view": "list", "visible": true },

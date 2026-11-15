@@ -8,7 +8,7 @@
  * the Phase 2 panel bundle without pulling Node code into the browser.
  */
 
-export const MATRIX_VERSION = '2.0.0';
+export const MATRIX_VERSION = '2.1.0';
 export const CONFIG_VERSION = 4;
 export const CONFIG_FILE_NAME = 'openwith-matrix.json';
 
@@ -119,6 +119,7 @@ export interface HomeConfig {
 
 export type HomeSectionKind =
   | 'guests'
+  | 'marketplace'
   | 'win11-apps'
   | 'shardx'
   | 'wsl-ports'
@@ -146,6 +147,7 @@ export interface HomeSectionConfig {
  */
 export const DEFAULT_HOME_SECTIONS: HomeSectionConfig[] = [
   { id: 'guests', kind: 'guests', label: '扩展', view: 'list', visible: true },
+  { id: 'marketplace', kind: 'marketplace', label: '扩展市场', view: 'cards', visible: true },
   { id: 'win11-apps', kind: 'win11-apps', label: '应用', view: 'cards', visible: true },
   { id: 'shardx', kind: 'shardx', label: 'ShardX', view: 'list', visible: true },
   { id: 'wsl-ports', kind: 'wsl-ports', label: 'WSL 端口', view: 'list', visible: true },
@@ -195,7 +197,13 @@ export interface MatrixSettings {
   shardx: ShardxSettings;
   docker: DockerSettings;
   k8s: K8sSettings;
+  marketplace: MarketplaceSettings;
   logSources: LogSourceConfig[];
+}
+
+export interface MarketplaceSettings {
+  /** Proxy URL for marketplace API and download requests, empty for a direct connection. */
+  proxy: string;
 }
 
 export interface BrowserSettings {
@@ -392,6 +400,13 @@ export interface GuestServiceInfo {
   };
 }
 
+export interface GuestFileEditor {
+  id?: string;
+  title?: string;
+  entry?: string;
+  match?: string[];
+}
+
 export interface GuestSummary {
   id: string;
   name: string;
@@ -404,6 +419,8 @@ export interface GuestSummary {
   path?: string;
   entry?: string;
   pageEntry?: string;
+  /** File-editor entries declared by the package (Excalidraw and similar). */
+  fileEditors?: GuestFileEditor[];
   /** Git install source reported by the host, when the guest was cloned. */
   originUrl?: string;
   /** Repository declared by the guest's package.json. */
@@ -418,6 +435,55 @@ export interface GuestSummary {
   };
   service?: GuestServiceInfo;
   storageId?: string;
+}
+
+export type MarketplaceSource = 'official' | 'github';
+export type MarketplaceCategory = 'tools' | 'themes' | 'mcp' | 'other';
+/** Curated install tier: T0 first, T1 with the matching stack, T2 redundant. */
+export type MarketplaceTier = 'T0' | 'T1' | 'T2';
+
+export interface MarketplaceEntry {
+  id: string;
+  name: string;
+  description: string;
+  /** Chinese description shipped with the catalog; the panel prefers it. */
+  descriptionZh?: string;
+  category: MarketplaceCategory;
+  source: MarketplaceSource;
+  /** Original category on the official directory (for example Workflow). */
+  sourceCategory?: string;
+  /** True when the official directory marks the extension as official. */
+  official?: boolean;
+  repoUrl?: string;
+  homepageUrl?: string;
+  /** Git URL accepted by the host install API. */
+  installUrl?: string;
+  /** Inline data URL of the extension's own icon, when it ships one. */
+  avatarUrl?: string;
+  /** Built-in glyph name declared by the manifest when no icon file exists. */
+  iconGlyph?: string;
+  owner?: string;
+  stars?: number;
+  updatedAt?: string;
+  addedAt?: string;
+  tags?: string[];
+  /** Default branch used to validate the package manifest. */
+  defaultBranch?: string;
+  /** The repository passed package.json + openchamber manifest validation. */
+  installable: boolean;
+  archived?: boolean;
+  /** Curated install tier from `marketplaceTiers.ts`; absent when unrated. */
+  tier?: MarketplaceTier;
+}
+
+export interface MarketplaceCatalog {
+  entries: MarketplaceEntry[];
+  updatedAt: number;
+  sources: {
+    official: number;
+    github: number;
+    errors: string[];
+  };
 }
 
 export interface GuestFrameGrant {
