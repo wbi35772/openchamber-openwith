@@ -16,8 +16,8 @@ macOS / Linux 可以开发通用部分，但 ShardX 与 Windows 应用组不会�
 ## 2. 快速开始
 
 ```bash
-git clone https://github.com/wbi35772/openchamber-openwith-matrix.git
-cd openchamber-openwith-matrix
+git clone https://github.com/wbi35772/openchamber-openwith.git
+cd openchamber-openwith
 npm install
 npm run typecheck
 npm run build
@@ -42,7 +42,7 @@ npm run build
 | `npm run build` | 清理 `dist/`，复制静态文件，打包面板与服务 |
 | `npm test` | `typecheck` + `build`（当前没有独立单元测试） |
 | `make build` / `make typecheck` / `make test` | 等价的 Makefile 包装 |
-| `make package` | 生成 `openchamber-openwith-matrix.zip` |
+| `make package` | 生成 `openchamber-openwith.zip` |
 
 构建脚本依赖 `@openchamber/sdk` 提供的 `scripts/bundle-guest.ts`：
 
@@ -169,14 +169,14 @@ npm run build
 
 `.github/workflows/release.yml`：
 
-- 推送到 `main`：构建 → 生成 `openchamber-openwith-matrix-latest.zip` →
+- 推送到 `main`：构建 → 生成 `openchamber-openwith-latest.zip` →
   强制更新孤立 `release` 分支 → 创建/更新 `latest` Release；
 - 推送 `vX.Y.Z` 标签：发布同名 Release，同样更新 `release` 分支。
 
 安装方式：
 
 - 下载 Release 中的 zip；
-- 或使用 `https://github.com/wbi35772/openchamber-openwith-matrix.git#release`
+- 或使用 `https://github.com/wbi35772/openchamber-openwith.git#release`
   （宿主会比较 `package.json` 版本，可原地更新）。
 
 ### 版本号

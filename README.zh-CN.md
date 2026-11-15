@@ -84,10 +84,10 @@ panel iframe ──serviceRequest──► OpenChamber host ──127.0.0.1:PORT
 1. 打开 **设置 → 扩展**。
 2. 添加以下任一来源：
    - 最新 zip：
-     `https://github.com/wbi35772/openchamber-openwith-matrix/releases/latest/download/openchamber-openwith-matrix-latest.zip`
+     `https://github.com/wbi35772/openchamber-openwith/releases/latest/download/openchamber-openwith-latest.zip`
    - 本地克隆执行 `npm run build` 后的 `dist/` 文件夹；
    - `release` 分支的 git 地址：
-     `https://github.com/wbi35772/openchamber-openwith-matrix.git#release`
+     `https://github.com/wbi35772/openchamber-openwith.git#release`
      （`package.json` 版本增加后，git 安装可原地更新）。
 3. 批准 **Allow and enable**。弹窗会列出本地服务与允许执行的命令。
 
@@ -200,6 +200,7 @@ npm test             # typecheck + build
 | 2026-10-13 | 首个版本：扩展、应用与链接的侧栏启动器 |
 | 2026-11-05 | 2.0.0 基线：标签工作台、分屏、配置 v4、11 个资源分区 |
 | 2026-11-06 | 标签化主页、动作分层、内置标签可编辑删除、资源导航层级 |
+| 2026-11-13 | 扩展市场代理、T0/T1/T2 等级与目录缓存 |
 
 逐条变更见 [changelog.md](./changelog.md)。
 
@@ -210,6 +211,7 @@ npm test             # typecheck + build
 - [架构](./docs/ARCHITECTURE.md) — 运行模型、面板、服务、路由
 - [配置](./docs/CONFIG.md) — 全部字段、默认值与变量
 - [开发](./docs/DEVELOPMENT.md) — 构建、调试、发布
+- [功能地图](./docs/canvas/openwith-feature-map.html) — 交互式架构与功能地图（Canvas）
 - [v1 设计稿存档](./docs/design/v1-open-with-proposal.md)
 
 ## 许可证

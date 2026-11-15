@@ -16,7 +16,7 @@
 | 宿主要求 | OpenChamber `>= 2.0.0`（网页版或桌面版） |
 | 主要运行平台 | Windows 11 + WSL2（ShardX / Windows 应用组为 Windows 专属） |
 | 基础能力平台 | macOS / Linux 可运行标签页、终端、日志、guest 嵌入与网页标签页 |
-| 仓库 | `https://github.com/wbi35772/openchamber-openwith-matrix` |
+| 仓库 | `https://github.com/wbi35772/openchamber-openwith` |
 | 许可证 | Apache-2.0 |
 | 基线日期 | 2026-11-05 |
 | 基线提交 | 本文件所在的 `main` 分支提交 |

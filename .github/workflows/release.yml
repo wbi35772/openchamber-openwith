@@ -49,11 +49,11 @@ jobs:
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
             echo "title=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-            echo "zip_name=openchamber-openwith-matrix-${GITHUB_REF_NAME}.zip" >> "$GITHUB_OUTPUT"
+            echo "zip_name=openchamber-openwith-${GITHUB_REF_NAME}.zip" >> "$GITHUB_OUTPUT"
           else
             echo "tag=latest" >> "$GITHUB_OUTPUT"
             echo "title=latest" >> "$GITHUB_OUTPUT"
-            echo "zip_name=openchamber-openwith-matrix-latest.zip" >> "$GITHUB_OUTPUT"
+            echo "zip_name=openchamber-openwith-latest.zip" >> "$GITHUB_OUTPUT"
           fi
 
       # Zip first, while dist/ is still pristine: the branch step below creates a

@@ -1,0 +1,1252 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>OpenWith Matrix · 功能地图</title>
+<style>
+  :root{
+    color-scheme:dark;
+    --bg:#0a0c11; --bg-soft:#0e1118; --panel:#141821; --panel-2:#1a1f2b; --panel-3:#212838;
+    --text:#e9edf5; --muted:#9aa4b8; --faint:#6f7a8f;
+    --line:#262d3d; --line-strong:#3a445b;
+    --accent:#8f7cff; --accent-soft:rgba(143,124,255,.15);
+    --teal:#4dd4c6; --teal-soft:rgba(77,212,198,.13);
+    --warn:#f0b45c; --warn-soft:rgba(240,180,92,.13);
+    --danger:#ff6f86; --danger-soft:rgba(255,111,134,.13);
+    --ok:#5dd39e; --ok-soft:rgba(93,211,158,.13);
+    --shadow:0 18px 50px rgba(0,0,0,.35);
+    --radius:14px;
+    --sans:"Segoe UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    --mono:ui-monospace,"Cascadia Code",Consolas,"SFMono-Regular",monospace;
+  }
+  :root[data-theme="light"]{
+    color-scheme:light;
+    --bg:#f6f7fb; --bg-soft:#eef1f7; --panel:#fff; --panel-2:#f2f4f9; --panel-3:#e8ecf4;
+    --text:#171b24; --muted:#5b6578; --faint:#7b8598;
+    --line:#dde2ec; --line-strong:#c2cad9;
+    --accent:#5b45e0; --accent-soft:rgba(91,69,224,.10);
+    --teal:#0f8f84; --teal-soft:rgba(15,143,132,.10);
+    --warn:#a86808; --warn-soft:rgba(168,104,8,.12);
+    --danger:#c62f4b; --danger-soft:rgba(198,47,75,.10);
+    --ok:#18794e; --ok-soft:rgba(24,121,78,.10);
+    --shadow:0 18px 50px rgba(23,27,36,.10);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.65;
+    background:
+      radial-gradient(1100px 540px at 82% -14%,var(--accent-soft),transparent 62%),
+      radial-gradient(900px 500px at 6% 8%,var(--teal-soft),transparent 55%),
+      var(--bg);
+    min-height:100vh;
+  }
+  ::selection{background:var(--accent);color:#fff}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,kbd,pre{font-family:var(--mono)}
+  code{font-size:.86em;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:.1em .38em;color:var(--teal)}
+  kbd{font-size:.78em;background:var(--panel-3);border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:5px;padding:.08em .4em;color:var(--text)}
+  pre{margin:0;background:#0b0e15;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-size:12.5px;line-height:1.7;color:#cfd7e6}
+  :root[data-theme="light"] pre{background:#11151e;color:#d8deea}
+  .app{display:grid;grid-template-columns:248px minmax(0,1fr);max-width:1500px;margin:0 auto}
+  .side{
+    position:sticky;top:0;height:100vh;min-width:0;padding:26px 16px 20px;display:flex;flex-direction:column;gap:18px;
+    border-right:1px solid var(--line);background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(14px);z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:11px;padding:0 6px}
+  .brand .logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,var(--accent),#5c4bd6);color:#fff;box-shadow:0 8px 22px var(--accent-soft);flex:none}
+  .brand .logo svg{width:23px;height:23px}
+  .brand b{display:block;font-size:14.5px;letter-spacing:.2px}
+  .brand span{display:block;font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+  .nav{display:flex;flex-direction:column;gap:2px;overflow:auto;min-width:0;padding-right:4px}
+  .nav a{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;color:var(--muted);font-size:13px;border:1px solid transparent;transition:.15s}
+  .nav a:hover{color:var(--text);background:var(--panel-2);text-decoration:none}
+  .nav a.active{color:var(--text);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 32%,transparent)}
+  .nav a svg{width:16px;height:16px;flex:none;opacity:.9}
+  .side-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:12px 6px 0;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)}
+  .side-foot .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .theme-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:6px 9px;font:inherit;font-size:11.5px;cursor:pointer}
+  .theme-btn:hover{color:var(--text);border-color:var(--line-strong)}
+  .theme-btn svg{width:14px;height:14px}
+  main{min-width:0;padding:34px clamp(18px,4vw,54px) 70px}
+  .hero{position:relative;padding:6px 0 30px;border-bottom:1px solid var(--line);margin-bottom:30px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--teal);font-weight:600}
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--teal)}
+  h1{font-size:clamp(30px,4.4vw,48px);line-height:1.12;letter-spacing:-1px;margin:12px 0 10px;font-weight:750}
+  h1 em{font-style:normal;background:linear-gradient(100deg,var(--accent),var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{max-width:760px;color:var(--muted);font-size:16px;margin:0}
+  .badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:18px}
+  .badge{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 9px;font-size:11px;color:var(--muted);white-space:nowrap}
+  .badge b{color:var(--text);font-weight:600}
+  .badge.accent{border-color:color-mix(in srgb,var(--accent) 40%,transparent);background:var(--accent-soft);color:var(--accent)}
+  .badge.ok{border-color:color-mix(in srgb,var(--ok) 38%,transparent);background:var(--ok-soft);color:var(--ok)}
+  .badge.warn{border-color:color-mix(in srgb,var(--warn) 38%,transparent);background:var(--warn-soft);color:var(--warn)}
+  .meta{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:12px;color:var(--faint)}
+  .meta span{display:inline-flex;align-items:center;gap:6px}
+  .meta svg{width:14px;height:14px}
+  .hero-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+  .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:9px;padding:8px 13px;font:inherit;font-size:12.5px;cursor:pointer;text-decoration:none}
+  .btn:hover{border-color:var(--line-strong);text-decoration:none}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),#6a55e6);border-color:transparent;color:#fff;box-shadow:0 8px 22px var(--accent-soft)}
+  .btn svg{width:15px;height:15px}
+  section{scroll-margin-top:26px;margin-bottom:46px}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+  .sec-head h2{font-size:23px;letter-spacing:-.4px;margin:0;display:flex;align-items:center;gap:10px}
+  .sec-head h2 .num{font:600 11px var(--mono);color:var(--accent);background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-radius:6px;padding:2px 6px}
+  .sec-head p{margin:4px 0 0;color:var(--muted);font-size:13px;max-width:720px}
+  .sec-head .hint{font-size:11.5px;color:var(--faint);white-space:nowrap}
+  h3{font-size:15.5px;margin:26px 0 10px;letter-spacing:.1px;display:flex;align-items:center;gap:8px}
+  h3 svg{width:17px;height:17px;color:var(--accent)}
+  p{margin:9px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:12.5px}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .card{background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--bg)));border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:0 1px 0 rgba(255,255,255,.02) inset}
+  .card.pad-sm{padding:14px}
+  .card h4{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:8px}
+  .card h4 svg{width:17px;height:17px;color:var(--accent);flex:none}
+  .card p{margin:6px 0 0;color:var(--muted);font-size:12.8px}
+  .card .foot{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:20px 0 8px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+  .stat b{display:block;font-size:24px;letter-spacing:-.5px;line-height:1.15}
+  .stat span{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+  .stat .up{color:var(--teal);font-size:10.5px}
+  .callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--panel);border-radius:0 12px 12px 0;padding:13px 16px;margin:14px 0;color:var(--muted);font-size:13px}
+  .callout b{color:var(--text)}
+  .callout.teal{border-left-color:var(--teal)}
+  .callout.warn{border-left-color:var(--warn)}
+  .callout.danger{border-left-color:var(--danger)}
+  .pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 8px;font-size:10.5px;font-weight:600;border:1px solid transparent;white-space:nowrap}
+  .pill.ok{background:var(--ok-soft);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+  .pill.warn{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+  .pill.danger{background:var(--danger-soft);color:var(--danger);border-color:color-mix(in srgb,var(--danger) 30%,transparent)}
+  .pill.info{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+  .pill.teal{background:var(--teal-soft);color:var(--teal);border-color:color-mix(in srgb,var(--teal) 30%,transparent)}
+  .list{list-style:none;padding:0;margin:8px 0}
+  .list li{position:relative;padding:5px 0 5px 20px;color:var(--muted);font-size:13px}
+  .list li::before{content:"";position:absolute;left:3px;top:12px;width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.8}
+  .list.teal li::before{background:var(--teal)}
+  .list.check li::before{content:"";left:2px;top:10px;width:9px;height:5px;border-left:2px solid var(--ok);border-bottom:2px solid var(--ok);border-radius:0;background:none;transform:rotate(-45deg)}
+  .table-wrap{border:1px solid var(--line);border-radius:12px;overflow:auto;background:var(--panel)}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:12.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--faint);background:var(--panel-2);position:sticky;top:0;z-index:1;font-weight:600}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:color-mix(in srgb,var(--panel-2) 55%,transparent)}
+  td code{white-space:nowrap}
+  .ic{width:18px;height:18px;display:inline-block;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .ic.lg{width:22px;height:22px}
+  .icon-chip{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);flex:none}
+  .icon-chip.teal{background:var(--teal-soft);color:var(--teal);border-color:color-mix(in srgb,var(--teal) 22%,transparent)}
+  .icon-chip.warn{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 22%,transparent)}
+  .icon-chip.ok{background:var(--ok-soft);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 22%,transparent)}
+  .icon-chip svg{width:18px;height:18px}
+  .flow{display:grid;gap:10px;counter-reset:step}
+  .flow .step{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .flow .step .n{counter-increment:step;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:600 12px var(--mono);border:1px solid color-mix(in srgb,var(--accent) 26%,transparent)}
+  .flow .step .n::before{content:counter(step,decimal-leading-zero)}
+  .flow .step b{display:block;font-size:13px}
+  .flow .step span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .diagram{background:linear-gradient(180deg,var(--panel),var(--bg-soft));border:1px solid var(--line);border-radius:16px;padding:10px;overflow:auto}
+  .diagram svg{display:block;width:100%;min-width:760px;height:auto}
+  .diagram .zone{fill:color-mix(in srgb,var(--panel-2) 65%,transparent);stroke:var(--line);stroke-dasharray:5 6}
+  .diagram .node-box{fill:var(--panel);stroke:var(--line-strong);stroke-width:1.2}
+  .diagram .node-box.accent{fill:var(--accent-soft);stroke:color-mix(in srgb,var(--accent) 55%,transparent)}
+  .diagram .node-box.teal{fill:var(--teal-soft);stroke:color-mix(in srgb,var(--teal) 55%,transparent)}
+  .diagram .node-box.warn{fill:var(--warn-soft);stroke:color-mix(in srgb,var(--warn) 50%,transparent)}
+  .diagram text{font-family:var(--sans)}
+  .diagram .t-title{fill:var(--text);font-size:14px;font-weight:650}
+  .diagram .t-sub{fill:var(--muted);font-size:11px}
+  .diagram .t-tiny{fill:var(--faint);font-size:10px}
+  .diagram .t-zone{fill:var(--faint);font-size:10.5px;letter-spacing:1.6px;font-weight:700}
+  .diagram .edge{stroke:var(--line-strong);stroke-width:1.4;fill:none}
+  .diagram .edge.dash{stroke-dasharray:4 5}
+  .diagram .edge-label{fill:var(--faint);font-size:10px}
+  .diagram .dot{fill:var(--teal)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 14px}
+  .tab-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:9px;padding:7px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+  .tab-btn svg{width:15px;height:15px}
+  .tab-btn[aria-selected="true"]{color:var(--text);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--accent-soft)}
+  .tab-panel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .tab-panel.on{display:block;animation:fade .18s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+  .kv{display:grid;grid-template-columns:120px minmax(0,1fr);gap:7px 14px;font-size:12.8px}
+  .kv dt{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding-top:2px}
+  .kv dd{margin:0;color:var(--muted)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+  .chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:4px 10px;font:inherit;font-size:11.5px;cursor:pointer}
+  .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--accent)}
+  .search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 11px;margin-bottom:12px}
+  .search svg{width:15px;height:15px;color:var(--faint)}
+  .search input{border:0;background:transparent;color:var(--text);font:inherit;font-size:13px;outline:none;width:100%}
+  .search input::placeholder{color:var(--faint)}
+  .empty{padding:22px;text-align:center;color:var(--faint);font-size:13px;display:none}
+  .tier{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:start}
+  .tier .rank{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font:700 15px var(--mono);border:1px solid}
+  .tier.t0 .rank{background:var(--danger-soft);color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+  .tier.t1 .rank{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+  .tier.t2 .rank{background:var(--panel-3);color:var(--muted);border-color:var(--line-strong)}
+  .timeline{position:relative;margin:8px 0 0;padding-left:22px}
+  .timeline::before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--accent),var(--teal),transparent)}
+  .tl-item{position:relative;padding:0 0 18px 8px}
+  .tl-item::before{content:"";position:absolute;left:-21px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .tl-item.teal::before{background:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
+  .tl-item time{font:600 10.5px var(--mono);color:var(--faint);letter-spacing:.4px}
+  .tl-item b{display:block;font-size:13px;margin:2px 0}
+  .tl-item span{display:block;color:var(--muted);font-size:12px}
+  .tree{font:12.3px/1.85 var(--mono);color:var(--muted);background:#0b0e15;border:1px solid var(--line);border-radius:12px;padding:15px 17px;overflow:auto;white-space:pre}
+  :root[data-theme="light"] .tree{background:#11151e;color:#c8d0df}
+  .tree b{color:var(--teal);font-weight:600}
+  .tree i{color:var(--accent);font-style:normal}
+  .tree em{color:var(--faint);font-style:normal}
+  .split{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:16px}
+  .stack{display:flex;flex-direction:column;gap:12px}
+  .kpi{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+  .kpi .icon-chip{width:30px;height:30px;border-radius:8px}
+  .kpi .icon-chip svg{width:16px;height:16px}
+  .kpi b{display:block;font-size:12.5px}
+  .kpi span{display:block;font-size:11px;color:var(--faint)}
+  .copy{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--panel-2);color:var(--faint);border-radius:6px;padding:2px 6px;font:11px var(--sans);cursor:pointer}
+  .copy:hover{color:var(--text)}
+  .copy svg{width:12px;height:12px}
+  .footer{border-top:1px solid var(--line);padding-top:22px;margin-top:10px;color:var(--faint);font-size:12px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .footer .links{display:flex;gap:14px;flex-wrap:wrap}
+  .top{position:fixed;right:22px;bottom:22px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line-strong);background:var(--panel);color:var(--muted);display:grid;place-items:center;cursor:pointer;opacity:0;pointer-events:none;transition:.2s;z-index:30;box-shadow:var(--shadow)}
+  .top.on{opacity:1;pointer-events:auto}
+  .top svg{width:17px;height:17px}
+  @media(max-width:1180px){
+    .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media(max-width:980px){
+    .app{grid-template-columns:minmax(0,1fr)}
+    .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:16px;min-width:0}
+    .nav{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+    .nav a{white-space:nowrap}
+    .side-foot{display:none}
+    main{padding:24px 18px 60px}
+    .g3{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .split{grid-template-columns:1fr}
+  }
+  @media(max-width:640px){
+    body{font-size:14px}
+    .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .g2,.g3,.g4{grid-template-columns:1fr}
+    h1{font-size:30px}
+    .sec-head h2{font-size:20px}
+    .kv{grid-template-columns:1fr;gap:2px 0}
+    .kv dt{margin-top:7px}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+  @media print{.side,.top,.hero-actions{display:none}.app{display:block}main{padding:0}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/></symbol>
+  <symbol id="i-tabs" viewBox="0 0 24 24"><path d="M3 8h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8Z"/><path d="M3 8V5a1 1 0 0 1 1-1h5l2 4"/><path d="M9 13h6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 7.9 7.5 9.5 4.3-1.6 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9h16l-1 11H5L4 9Z"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/><path d="M9 14h6"/></symbol>
+  <symbol id="i-bridge" viewBox="0 0 24 24"><path d="M3 17V9"/><path d="M21 17V9"/><path d="M3 13h18"/><path d="M7 13v4"/><path d="M12 13v4"/><path d="M17 13v4"/><path d="M6 9a6 6 0 0 1 12 0"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 0 8h-4a4 4 0 0 0 0 8h5.5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h8"/><path d="M16 18h4"/><circle cx="14" cy="18" r="2"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M14 4c3.5 0 6 2.5 6 6-2.5 5.5-7 8-10 9l-3-3c1-3 3.5-7.5 9-10Z"/><path d="m9 15-3 3"/><path d="M8 10 5 9l-1-3 4 1"/><path d="m14 16 1 3 3 1-1-4"/><circle cx="15.5" cy="8.5" r="1.4"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M13 15h4"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/></symbol>
+  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M9 4a2 2 0 0 1 4 0v1h4v4h1a2 2 0 0 1 0 4h-1v5H4v-5H3a2 2 0 0 1 0-4h1V5h5V4Z"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01"/><path d="M7 17h.01"/></symbol>
+  <symbol id="i-docker" viewBox="0 0 24 24"><path d="M4 11h14a4 4 0 0 1-4 5H8a4 4 0 0 1-4-4v-1Z"/><path d="M7 11V8h3v3"/><path d="M11 11V8h3v3"/><path d="M7 8V5h3v3"/><path d="M15 8h3l1-2"/></symbol>
+  <symbol id="i-kube" viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="M12 7v5l4 2"/><circle cx="12" cy="12" r="1.2"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.5 4.5 0 0 0 7 18Z"/></symbol>
+  <symbol id="i-windows" viewBox="0 0 24 24"><path d="M4 5.5 11 4v7H4V5.5Z"/><path d="M13 3.7 20 3v8h-7V3.7Z"/><path d="M4 13h7v7l-7-1.5V13Z"/><path d="M13 13h7v8l-7-1V13Z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.9 19.1 1.4-1.4"/><path d="m17.7 6.3 1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="m13 5-2 14"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8"/><path d="m16 7 2 2"/><path d="m18 5 2 2"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2V5Z"/><path d="M20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2V5Z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></symbol>
+  <symbol id="i-git" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M6 8.5v3A3.5 3.5 0 0 0 9.5 15h5"/><path d="M18 8.5v3A3.5 3.5 0 0 1 14.5 15h-1"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v6"/><path d="M15 3v6"/><path d="M6 9h12v3a6 6 0 0 1-6 6 6 6 0 0 1-6-6V9Z"/><path d="M12 18v3"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 20v-4h-4"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v4h4"/><path d="M9 12h6"/><path d="M9 16h6"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 3v3"/><path d="M15 3v3"/><path d="M9 18v3"/><path d="M15 18v3"/><path d="M3 9h3"/><path d="M3 15h3"/><path d="M18 9h3"/><path d="M18 15h3"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5Z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="m9 3 6 6"/><path d="m14 4 6 6-3 1-3 3-1 4-2-2-4 4-2-2 4-4-2-2 4-1 3-3 1-3Z"/></symbol>
+  <symbol id="i-split" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/><path d="m8 10-2 2 2 2"/><path d="m16 10 2 2-2 2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9L12 3Z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="m20 4-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 24 24"><path d="m12 3 9 16H3L12 3Z"/><path d="M12 9v4"/><path d="M12 16h.01"/></symbol>
+</svg>
+
+<div class="app">
+<aside class="side">
+  <div class="brand">
+    <div class="logo"><svg class="ic"><use href="#i-grid"/></svg></div>
+    <div><b>OpenWith Matrix</b><span>feature map</span></div>
+  </div>
+  <nav class="nav" id="nav" aria-label="文档导航">
+    <a href="#overview" class="active"><svg class="ic"><use href="#i-compass"/></svg>总览</a>
+    <a href="#topology"><svg class="ic"><use href="#i-layers"/></svg>运行拓扑</a>
+    <a href="#tabs"><svg class="ic"><use href="#i-tabs"/></svg>标签系统</a>
+    <a href="#resources"><svg class="ic"><use href="#i-box"/></svg>资源中心</a>
+    <a href="#marketplace"><svg class="ic"><use href="#i-store"/></svg>扩展市场</a>
+    <a href="#bridge"><svg class="ic"><use href="#i-bridge"/></svg>宿主桥</a>
+    <a href="#routes"><svg class="ic"><use href="#i-route"/></svg>服务路由</a>
+    <a href="#config"><svg class="ic"><use href="#i-sliders"/></svg>配置权限</a>
+    <a href="#build"><svg class="ic"><use href="#i-rocket"/></svg>构建发布</a>
+    <a href="#iterate"><svg class="ic"><use href="#i-code"/></svg>迭代指南</a>
+    <a href="#timeline"><svg class="ic"><use href="#i-clock"/></svg>里程碑</a>
+  </nav>
+  <div class="side-foot">
+    <div class="row"><span>v2.1.0 · 2026-11-15</span><button class="theme-btn" id="themeBtn" type="button" title="切换主题"><svg class="ic"><use href="#i-moon" id="themeIcon"/></svg><span id="themeLabel">暗色</span></button></div>
+    <div class="row"><a href="https://github.com/wbi35772/openchamber-openwith" target="_blank" rel="noreferrer">私有仓库</a><a href="#iterate">如何更新</a></div>
+  </div>
+</aside>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">OpenChamber Extension · panel id: openwith</div>
+  <h1>OpenWith Matrix <em>功能地图</em></h1>
+  <p class="lede">一个侧边面板，装下扩展、Windows 应用、ShardX、WSL2、Docker、Kubernetes 与每天要开的链接。这张地图覆盖全部功能、协议、路由与扩展点，作为后续迭代的单一入口。</p>
+  <div class="badges">
+    <span class="badge accent"><b>v2.1.0</b></span>
+    <span class="badge">OpenChamber <b>&gt;= 2.0.0</b></span>
+    <span class="badge ok"><svg class="ic"><use href="#i-check"/></svg>typecheck / build 通过</span>
+    <span class="badge">Apache-2.0</span>
+    <span class="badge warn"><svg class="ic"><use href="#i-lock"/></svg>私有仓库</span>
+  </div>
+  <div class="meta">
+    <span><svg class="ic"><use href="#i-git"/></svg>wbi35772/openchamber-openwith</span>
+    <span><svg class="ic"><use href="#i-clock"/></svg>更新于 2026-11-15</span>
+    <span><svg class="ic"><use href="#i-file"/></svg>docs/canvas/openwith-feature-map.html</span>
+  </div>
+  <div class="hero-actions">
+    <a class="btn primary" href="#topology"><svg class="ic"><use href="#i-layers"/></svg>看运行拓扑</a>
+    <a class="btn" href="#routes"><svg class="ic"><use href="#i-route"/></svg>查服务路由</a>
+    <a class="btn" href="#iterate"><svg class="ic"><use href="#i-code"/></svg>怎么加功能</a>
+    <a class="btn" href="https://github.com/wbi35772/openchamber-openwith" target="_blank" rel="noreferrer"><svg class="ic"><use href="#i-external"/></svg>打开仓库</a>
+  </div>
+</header>
+
+<section id="overview">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">01</span>总览</h2>
+      <p>浏览器式多标签工作台：面板只负责界面，所有特权操作都交给本机服务。</p>
+    </div>
+    <div class="hint">先看数字，再看六个能力</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>5</b><span>标签页类型</span></div>
+    <div class="stat"><b>11</b><span>默认资源分区</span></div>
+    <div class="stat"><b>40</b><span>标签上限</span></div>
+    <div class="stat"><b>12</b><span>保活标签</span></div>
+    <div class="stat"><b>6</b><span>模板变量</span></div>
+    <div class="stat"><b>1</b><span>本地服务进程</span></div>
+  </div>
+
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-tabs"/></svg>Tab OS</h4>
+      <p>主页、嵌入扩展、网页、日志流、终端五类标签页；支持置顶、拖动排序、保活与刷新后恢复。</p>
+      <div class="foot"><span>panel/tabManager.ts</span><span class="pill info">核心</span></div>
+    </div>
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-split"/></svg>分屏与保活</h4>
+      <p>副标签并排显示，拖动分割线 0.2–0.8 调比例，双击复位；最近 12 个标签保持存活。</p>
+      <div class="foot"><span>layout + sessionStorage</span><span class="pill teal">体验</span></div>
+    </div>
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-puzzle"/></svg>扩展嵌入</h4>
+      <p>用宿主签发的 frame-grant 把其他 OpenChamber 扩展嵌进标签页，并通过 postMessage shim 转发宿主调用。</p>
+      <div class="foot"><span>panel/guestBridge.ts</span><span class="pill info">桥接</span></div>
+    </div>
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-store"/></svg>扩展市场</h4>
+      <p>官方目录 + GitHub 社区聚合，分类筛选、T0/T1/T2 推荐等级、星标与更新时间，一键安装与更新检查。</p>
+      <div class="foot"><span>service/marketplace.ts</span><span class="pill teal">2026-11 新增</span></div>
+    </div>
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-box"/></svg>资源中心</h4>
+      <p>扩展、应用、ShardX、WSL、Docker、Kubernetes、端口、书签、Webhook 全部可增删改排序，写回同一份配置。</p>
+      <div class="foot"><span>service/configStore.ts</span><span class="pill info">可编辑</span></div>
+    </div>
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-shield"/></svg>本地优先</h4>
+      <p>服务只监听 127.0.0.1，Bearer token 鉴权，2 MB 请求上限，命令走显式 allowlist；面板没有文件系统与进程权限。</p>
+      <div class="foot"><span>service/main.ts</span><span class="pill ok">安全边界</span></div>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-bolt"/></svg>六条设计原则</h3>
+  <div class="grid g2">
+    <div class="card pad-sm"><ul class="list check">
+      <li><b>面板不碰特权</b>：iframe 只有 DOM 与宿主桥，读文件、跑命令、开进程都在 service。</li>
+      <li><b>服务不出本机</b>：127.0.0.1 + token，所有响应统一 <code>{ok,data}</code> / <code>{ok,error,detail}</code>。</li>
+      <li><b>配置深合并</b>：默认配置与用户配置递归合并，数组整体替换，迁移由 configStore 统一处理。</li>
+    </ul></div>
+    <div class="card pad-sm"><ul class="list check teal">
+      <li><b>宿主桥按作用域复用</b>：workspace 与 shells 共享同一条宿主通道，避免 32 条订阅上限。</li>
+      <li><b>窄面板优先</b>：约 406 px 宽度下仍可用，窄屏自动换行、单列表单、上下布局。</li>
+      <li><b>Windows 优先但不锁死</b>：命令与路径按平台探测，WSL 作为一等资源，Linux/macOS 走兼容分支。</li>
+    </ul></div>
+  </div>
+
+  <div class="callout teal"><b>一句话理解：</b>OpenWith 是 OpenChamber 里的“窗口管理器 + 资源启动器”。它不替代扩展，而是把扩展、网页、终端和本机服务放进同一个可保活的标签工作台。</div>
+</section>
+
+<section id="topology">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">02</span>运行拓扑</h2>
+      <p>三个执行域：沙箱面板、宿主桥、本机服务；外部进程由服务按 allowlist 拉起。</p>
+    </div>
+    <div class="hint">谁可以碰什么，一眼看清</div>
+  </div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1120 660" role="img" aria-label="OpenWith Matrix 运行拓扑图">
+      <defs>
+        <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="var(--line-strong)"/></marker>
+        <marker id="arw-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="var(--teal)"/></marker>
+      </defs>
+      <rect class="zone" x="18" y="18" width="1084" height="342" rx="18"/>
+      <text class="t-zone" x="42" y="46">OPENCHAMBER HOST</text>
+
+      <rect class="node-box accent" x="48" y="82" width="306" height="218" rx="14"/>
+      <text class="t-title" x="70" y="112">panel iframe</text>
+      <text class="t-sub" x="70" y="134">sandbox · allow-scripts · CSP</text>
+      <text class="t-sub" x="70" y="154">panel/main.ts · tabManager</text>
+      <text class="t-tiny" x="70" y="180">• DOM / 标签 / 分屏 / 视图</text>
+      <text class="t-tiny" x="70" y="199">• 宿主 storage 与 serviceRequest</text>
+      <text class="t-tiny" x="70" y="218">• 无 Node、无直接外网、无任意 iframe</text>
+      <rect x="70" y="238" width="122" height="22" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-opacity=".35"/>
+      <text class="t-tiny" x="80" y="253" fill="var(--accent)">406 px 仍可用</text>
+
+      <rect class="node-box" x="430" y="82" width="232" height="218" rx="14"/>
+      <text class="t-title" x="452" y="112">host bridge</text>
+      <text class="t-sub" x="452" y="134">serviceRequest · frame-grant</text>
+      <text class="t-sub" x="452" y="154">postMessage shim</text>
+      <text class="t-tiny" x="452" y="180">• 注入 token 后转发请求</text>
+      <text class="t-tiny" x="452" y="199">• 扩展 iframe 授权与宿主 API</text>
+      <text class="t-tiny" x="452" y="218">• 订阅按作用域去重</text>
+      <rect x="452" y="238" width="150" height="22" rx="6" fill="var(--teal-soft)" stroke="var(--teal)" stroke-opacity=".35"/>
+      <text class="t-tiny" x="462" y="253" fill="var(--teal)">唯一跨域通道</text>
+
+      <rect class="node-box teal" x="738" y="82" width="330" height="218" rx="14"/>
+      <text class="t-title" x="760" y="112">service process</text>
+      <text class="t-sub" x="760" y="134">127.0.0.1:PORT · Bearer token</text>
+      <text class="t-sub" x="760" y="154">service/main.ts 路由表</text>
+      <text class="t-tiny" x="760" y="180">• 配置 / 快照 / 市场 / 日志</text>
+      <text class="t-tiny" x="760" y="199">• WSL · Docker · kubectl · 终端</text>
+      <text class="t-tiny" x="760" y="218">• exec allowlist · 2 MB body cap</text>
+      <rect x="760" y="238" width="152" height="22" rx="6" fill="var(--ok-soft)" stroke="var(--ok)" stroke-opacity=".35"/>
+      <text class="t-tiny" x="770" y="253" fill="var(--ok)">只监听 loopback</text>
+
+      <path class="edge" d="M354 190 H430" marker-end="url(#arw)"/>
+      <text class="edge-label" x="358" y="181">serviceRequest</text>
+      <path class="edge" d="M662 190 H738" marker-end="url(#arw)"/>
+      <text class="edge-label" x="666" y="181">Bearer token</text>
+
+      <rect class="node-box" x="48" y="432" width="306" height="150" rx="14"/>
+      <text class="t-title" x="70" y="462">guest extensions</text>
+      <text class="t-sub" x="70" y="484">iframe + host shim</text>
+      <text class="t-tiny" x="70" y="510">frame-grant 一次性授权</text>
+      <text class="t-tiny" x="70" y="529">fileEditors / statusSection / integration</text>
+      <text class="t-tiny" x="70" y="548">会话切换 · 附加到聊天 · service-status</text>
+
+      <rect class="node-box warn" x="396" y="432" width="306" height="150" rx="14"/>
+      <text class="t-title" x="418" y="462">local state</text>
+      <text class="t-sub" x="418" y="484">~/.config/openchamber/</text>
+      <text class="t-tiny" x="418" y="510">openwith-matrix.json · 用户配置</text>
+      <text class="t-tiny" x="418" y="529">openwith-matrix-marketplace.json · 缓存</text>
+      <text class="t-tiny" x="418" y="548">openchamber-openwith/logs/service.log</text>
+
+      <rect class="node-box" x="744" y="432" width="324" height="150" rx="14"/>
+      <text class="t-title" x="766" y="462">child processes</text>
+      <text class="t-sub" x="766" y="484">按 allowlist 拉起</text>
+      <text class="t-tiny" x="766" y="510">应用 · PowerShell / bash · git / curl</text>
+      <text class="t-tiny" x="766" y="529">WSL · docker / kubectl · Chrome / Edge</text>
+      <text class="t-tiny" x="766" y="548">ShardX launcher · Windows 工具</text>
+
+      <path class="edge" d="M201 432 V300" marker-end="url(#arw)"/>
+      <path class="edge" d="M201 300 V432" marker-end="url(#arw)"/>
+      <text class="edge-label" x="210" y="374">frame-grant + postMessage</text>
+
+      <path class="edge dash" d="M900 300 C900 360 780 380 700 432" marker-end="url(#arw)"/>
+      <text class="edge-label" x="760" y="392">read / write</text>
+
+      <path class="edge" d="M906 300 V432" marker-end="url(#arw-teal)"/>
+      <text class="edge-label" x="915" y="374">spawn / exec</text>
+
+      <text class="t-zone" x="42" y="620">TRUST BOUNDARY · PANEL &lt; BRIDGE &lt; SERVICE &lt; OS</text>
+    </svg>
+  </div>
+
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card pad-sm">
+      <h4><svg class="ic"><use href="#i-eye"/></svg>面板域</h4>
+      <p>只能画界面、读宿主 storage、发 serviceRequest。没有 Node、文件系统、子进程与任意网页 iframe。</p>
+      <div class="foot"><span>信任级别：低</span><span class="pill info">sandbox</span></div>
+    </div>
+    <div class="card pad-sm">
+      <h4><svg class="ic"><use href="#i-bridge"/></svg>桥接域</h4>
+      <p>宿主注入 token 并转发请求；给嵌入扩展签发 frame-grant、转发宿主 API、按作用域复用订阅。</p>
+      <div class="foot"><span>信任级别：中</span><span class="pill teal">host</span></div>
+    </div>
+    <div class="card pad-sm">
+      <h4><svg class="ic"><use href="#i-server"/></svg>服务域</h4>
+      <p>唯一能碰配置、日志、网络和子进程的地方；所有输入按控制器校验，命令必须在 allowlist 内。</p>
+      <div class="foot"><span>信任级别：高</span><span class="pill ok">loopback</span></div>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-activity"/></svg>一次请求怎么走</h3>
+  <div class="flow">
+    <div class="step"><div class="n"></div><div><b>面板发起 serviceRequest</b><span>视图只描述意图，例如读取快照或启动一个应用；不直接访问网络。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>宿主桥补上鉴权</b><span>把请求转发到本机服务端口，附带 Bearer token；跨域与 CSP 留在宿主侧处理。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>服务路由分发</b><span>service/main.ts 按路径找到控制器，校验参数、读取配置、调用子进程或宿主 API。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>统一信封返回</b><span>成功 <code>{ok:true,data}</code>，失败 <code>{ok:false,error,detail}</code>；面板按错误码显示可操作提示。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>视图增量更新</b><span>标签页保活，只有当前可见视图重绘；后台标签保留状态，切回时不丢滚动与输入。</span></div></div>
+  </div>
+</section>
+<section id="tabs">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">03</span>标签系统</h2>
+      <p>五类标签页共享同一套生命周期：创建、保活、置顶、排序、分屏、恢复。</p>
+    </div>
+    <div class="hint">点上面的标签切换细节</div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="标签页类型">
+    <button class="tab-btn" role="tab" aria-selected="true" data-kind="home"><svg class="ic"><use href="#i-grid"/></svg>主页</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-kind="guest"><svg class="ic"><use href="#i-puzzle"/></svg>嵌入扩展</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-kind="web"><svg class="ic"><use href="#i-globe"/></svg>网页</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-kind="log"><svg class="ic"><use href="#i-activity"/></svg>日志流</button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-kind="terminal"><svg class="ic"><use href="#i-terminal"/></svg>终端</button>
+  </div>
+
+  <div class="tab-panel on" data-panel="home">
+    <div class="split">
+      <div>
+        <h4 style="margin:0 0 6px;font-size:15px">matrix-home · 矩阵主页</h4>
+        <p class="muted">默认七个主页标签：扩展、扩展市场、Windows 应用与 ShardX、WSL2、Docker、Kubernetes、云与 Webhook。每个标签是一组资源卡片，可切换列表 / 卡片 / 紧凑视图。</p>
+        <ul class="list">
+          <li>标签可改名、排序、隐藏；删除内置标签后可从编辑器恢复。</li>
+          <li>自定义分组自动生成主页标签，按用途归类资源。</li>
+          <li>分页大小默认 8，最小 3；统计卡片可点击跳到对应分组。</li>
+          <li>编辑入口分层：分组、资源、动作各自独立，避免一个弹窗塞满。</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <div class="kpi"><div class="icon-chip"><svg class="ic"><use href="#i-tabs"/></svg></div><div><b>7 个默认主页标签</b><span>扩展 / 市场 / 应用 / WSL / Docker / K8s / 云</span></div></div>
+        <div class="kpi"><div class="icon-chip teal"><svg class="ic"><use href="#i-list"/></svg></div><div><b>3 种视图</b><span>卡片 · 列表 · 紧凑，逐标签记忆</span></div></div>
+        <div class="kpi"><div class="icon-chip warn"><svg class="ic"><use href="#i-folder"/></svg></div><div><b>自定义分组</b><span>自动生成标签，可重命名与排序</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-panel="guest">
+    <div class="split">
+      <div>
+        <h4 style="margin:0 0 6px;font-size:15px">guest-extension · 嵌入扩展</h4>
+        <p class="muted">把其他 OpenChamber 扩展的面板嵌进标签页。宿主先签发一次性 frame-grant，面板用 <code>/api/guest-files/{grant}/panel/index.html</code> 加载，再通过 postMessage shim 转发宿主调用。</p>
+        <ul class="list">
+          <li>按扩展自己声明的入口加载；纯文件编辑器（Excalidraw 等）走 <code>fileEditors</code> 入口并注入空白文档，不再白屏。</li>
+          <li>跟随宿主会话切换；Agent progress 等扩展显示当前会话进度。</li>
+          <li>转发 service-status、file-open、附加到聊天与目录切换。</li>
+          <li>workspace / shells 订阅按作用域去重，避免 32 条订阅上限。</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <div class="kpi"><div class="icon-chip"><svg class="ic"><use href="#i-key"/></svg></div><div><b>frame-grant</b><span>一次性、带过期时间，只授权单个扩展</span></div></div>
+        <div class="kpi"><div class="icon-chip teal"><svg class="ic"><use href="#i-bridge"/></svg></div><div><b>postMessage shim</b><span>宿主 API 与面板之间的唯一通道</span></div></div>
+        <div class="kpi"><div class="icon-chip ok"><svg class="ic"><use href="#i-refresh"/></svg></div><div><b>会话跟随</b><span>切项目 / 切会话时内嵌面板同步更新</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-panel="web">
+    <div class="split">
+      <div>
+        <h4 style="margin:0 0 6px;font-size:15px">web-iframe · 网页标签</h4>
+        <p class="muted">面板本身不允许任意 iframe，网页标签由服务侧的无头 Chrome / Edge 通过 CDP 渲染，再把画面与输入转发到面板。</p>
+        <ul class="list">
+          <li>帧轮询 + 输入转发，保留点击、滚动与键盘。</li>
+          <li>适合本地端口、WSL 服务、内网面板与文档页。</li>
+          <li>URL 支持模板变量，切项目时自动替换。</li>
+          <li>浏览器路径可在设置里指定（<code>browser.chromePath</code>）。</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <div class="kpi"><div class="icon-chip"><svg class="ic"><use href="#i-globe"/></svg></div><div><b>CDP 渲染</b><span>Chrome / Edge headless</span></div></div>
+        <div class="kpi"><div class="icon-chip teal"><svg class="ic"><use href="#i-activity"/></svg></div><div><b>帧轮询</b><span>画面与输入双向转发</span></div></div>
+        <div class="kpi"><div class="icon-chip warn"><svg class="ic"><use href="#i-link"/></svg></div><div><b>变量化 URL</b><span>{path} / {wslIp} / {projectName}</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-panel="log">
+    <div class="split">
+      <div>
+        <h4 style="margin:0 0 6px;font-size:15px">log-stream · 日志流</h4>
+        <p class="muted">订阅本机服务日志，实时追加；服务重启后自动重新订阅，不会停在 subscription-not-found。</p>
+        <ul class="list">
+          <li>日志文件：<code>~/.config/openchamber-openwith/logs/service.log</code>。</li>
+          <li>“发送到 AI”会截断旧日志以适配宿主 16000 字符限制，并显示真实结果。</li>
+          <li>适合排查服务启动、命令失败、市场抓取与代理问题。</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <div class="kpi"><div class="icon-chip"><svg class="ic"><use href="#i-file"/></svg></div><div><b>service.log</b><span>按时间追加，面板只读</span></div></div>
+        <div class="kpi"><div class="icon-chip teal"><svg class="ic"><use href="#i-refresh"/></svg></div><div><b>自动重订阅</b><span>服务重启后恢复流</span></div></div>
+        <div class="kpi"><div class="icon-chip warn"><svg class="ic"><use href="#i-spark"/></svg></div><div><b>发送到 AI</b><span>截断旧行，保留最近上下文</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" data-panel="terminal">
+    <div class="split">
+      <div>
+        <h4 style="margin:0 0 6px;font-size:15px">terminal-exec · 终端</h4>
+        <p class="muted">在服务侧执行命令并把输出流回面板。默认 shell 为 PowerShell，可切换 bash / sh；所有可执行文件必须在 <code>permissions.exec</code> 白名单内。</p>
+        <ul class="list">
+          <li>命令模板支持 <code>{path}</code>、<code>{winPath}</code>、<code>{projectName}</code> 等变量。</li>
+          <li>过滤 PowerShell 的 CLIXML 进度噪声，只显示命令结果。</li>
+          <li>终端标签可保活，切走再切回不丢输出。</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <div class="kpi"><div class="icon-chip"><svg class="ic"><use href="#i-terminal"/></svg></div><div><b>PowerShell 默认</b><span>settings.terminalShell</span></div></div>
+        <div class="kpi"><div class="icon-chip teal"><svg class="ic"><use href="#i-shield"/></svg></div><div><b>allowlist</b><span>未声明的命令直接拒绝</span></div></div>
+        <div class="kpi"><div class="icon-chip warn"><svg class="ic"><use href="#i-code"/></svg></div><div><b>变量模板</b><span>项目路径 / 分支 / WSL IP</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-bolt"/></svg>Tab OS 的六个动作</h3>
+  <div class="grid g3">
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-pin"/></svg>置顶</h4><p>固定常用标签，关闭其他标签时不受影响；置顶区始终排在前面。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-refresh"/></svg>保活</h4><p>最近 12 个标签保持存活，切换不重建 iframe，滚动与输入状态保留。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-split"/></svg>分屏</h4><p>副标签并排，拖动分割线调比例（0.2–0.8），双击复位。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-list"/></svg>拖动排序</h4><p>标签可拖动重排；布局写入 <code>openwith.tabs.v2</code>，刷新后恢复。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-box"/></svg>上限保护</h4><p>最多 40 个标签；超出时提示先关闭，避免 iframe 与订阅无限增长。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-grid"/></svg>新标签菜单</h4><p>紧凑列表展示全部已启用扩展及图标、版本；网址、日志、终端入口收在下方。</p></div>
+  </div>
+</section>
+
+<section id="resources">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">04</span>资源中心</h2>
+      <p>11 个默认资源分区，全部可在界面内增删改、排序与启停；写入同一份用户配置。</p>
+    </div>
+    <div class="hint">配置深合并，数组整体替换</div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>分区</th><th>能做什么</th><th>关键字段 / 依赖</th><th>默认主页标签</th></tr></thead>
+      <tbody>
+        <tr><td><svg class="ic"><use href="#i-puzzle"/></svg> 扩展</td><td>发现已安装扩展，启用 / 隐藏 / 卸载，嵌入标签页；显示版本、能力与更新状态。</td><td><code>extensions[]</code>、宿主 guest 列表</td><td>扩展</td></tr>
+        <tr><td><svg class="ic"><use href="#i-windows"/></svg> Windows 应用</td><td>启动任意 <code>.exe</code> 或 PATH 命令，自动附加当前项目路径；支持“选择 EXE”。</td><td><code>apps[]</code> · <code>path</code> / <code>args</code></td><td>应用与 ShardX</td></tr>
+        <tr><td><svg class="ic"><use href="#i-cpu"/></svg> ShardX</td><td>启动 / 停止 ShardX 实例，按 profile 管理多开。</td><td><code>shardx.instances[]</code> · <code>launcherPath</code></td><td>应用与 ShardX</td></tr>
+        <tr><td><svg class="ic"><use href="#i-terminal"/></svg> WSL 发行版</td><td>列出发行版、解析 WSL IP，打开发行版终端。</td><td><code>wsl.distros[]</code> · <code>wsl.exe</code></td><td>WSL2</td></tr>
+        <tr><td><svg class="ic"><use href="#i-link"/></svg> WSL 端口</td><td>把 WSL 内端口映射成可打开的本地网页标签。</td><td><code>wsl.ports[]</code> · <code>{wslIp}</code></td><td>WSL2</td></tr>
+        <tr><td><svg class="ic"><use href="#i-docker"/></svg> Compose 文件</td><td>对指定 compose 文件执行 up / down / ps / restart。</td><td><code>docker.compose[]</code> · <code>docker compose</code></td><td>Docker</td></tr>
+        <tr><td><svg class="ic"><use href="#i-box"/></svg> 容器</td><td>列出容器、查看状态、启动 / 停止 / 重启。</td><td><code>docker.containers[]</code> · <code>docker</code></td><td>Docker</td></tr>
+        <tr><td><svg class="ic"><use href="#i-kube"/></svg> Kube Context</td><td>切换 context，查看命名空间与工作负载入口。</td><td><code>k8s.contexts[]</code> · <code>kubectl</code></td><td>Kubernetes</td></tr>
+        <tr><td><svg class="ic"><use href="#i-route"/></svg> 端口转发</td><td>为 context 配置端口转发，一键启动 / 停止。</td><td><code>k8s.portForwards[]</code></td><td>Kubernetes</td></tr>
+        <tr><td><svg class="ic"><use href="#i-book"/></svg> 书签</td><td>保存常用网址，支持模板变量与自定义分组。</td><td><code>bookmarks[]</code> · <code>url</code></td><td>云与 Webhook</td></tr>
+        <tr><td><svg class="ic"><use href="#i-plug"/></svg> Webhook</td><td>保存 webhook 并在面板内触发，查看响应。</td><td><code>webhooks[]</code> · <code>POST /webhooks/:id/run</code></td><td>云与 Webhook</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="split" style="margin-top:16px">
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-sliders"/></svg>模板变量</h4>
+      <div class="table-wrap" style="margin-top:8px">
+        <table style="min-width:0">
+          <thead><tr><th>变量</th><th>含义</th><th>典型用途</th></tr></thead>
+          <tbody>
+            <tr><td><code>{path}</code></td><td>当前项目路径</td><td>应用参数、终端命令</td></tr>
+            <tr><td><code>{winPath}</code></td><td>Windows 风格路径</td><td>exe 参数、资源管理器</td></tr>
+            <tr><td><code>{pathUrlEncode}</code></td><td>URL 编码后的路径</td><td>编辑器深链、网页参数</td></tr>
+            <tr><td><code>{projectName}</code></td><td>项目目录名</td><td>容器名、窗口标题</td></tr>
+            <tr><td><code>{gitBranch}</code></td><td>当前分支</td><td>环境变量、书签</td></tr>
+            <tr><td><code>{wslIp}</code></td><td>WSL 虚拟网卡 IP</td><td>WSL 端口、服务地址</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <h4><svg class="ic"><use href="#i-folder"/></svg>配置与状态</h4>
+        <dl class="kv">
+          <dt>用户配置</dt><dd><code>~/.config/openchamber/openwith-matrix.json</code></dd>
+          <dt>默认配置</dt><dd><code>config/default-matrix.json</code></dd>
+          <dt>合并规则</dt><dd>递归深合并；数组整体替换，不做逐项合并</dd>
+          <dt>写入方式</dt><dd>原子写 + 版本迁移，失败保留旧文件</dd>
+          <dt>市场缓存</dt><dd><code>~/.config/openchamber/openwith-matrix-marketplace.json</code></dd>
+          <dt>服务日志</dt><dd><code>~/.config/openchamber-openwith/logs/service.log</code></dd>
+        </dl>
+      </div>
+      <div class="callout warn"><b>编辑边界：</b>资源编辑器只改配置，不直接执行命令；保存后由服务重新读取快照。想新增资源类型，需要同时改 <code>shared/types.ts</code>、默认配置与视图。</div>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-sliders"/></svg>运行设置</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>设置</th><th>默认</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>maxTabs</code></td><td>40</td><td>标签页上限，超出时拒绝新建并提示。</td></tr>
+        <tr><td><code>keepAliveTabs</code></td><td>12</td><td>保持存活的最近标签数，减少 iframe 重建。</td></tr>
+        <tr><td><code>terminalShell</code></td><td><code>powershell</code></td><td>终端默认 shell，可换 <code>bash</code> / <code>sh</code>。</td></tr>
+        <tr><td><code>browser.chromePath</code></td><td>自动探测</td><td>网页标签使用的 Chrome / Edge 可执行文件。</td></tr>
+        <tr><td><code>shardx.launcherPath</code></td><td>内置探测</td><td>ShardX 启动器路径。</td></tr>
+        <tr><td><code>home.pageSize</code></td><td>8（最小 3）</td><td>主页每组资源每页条数。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="marketplace">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">05</span>扩展市场</h2>
+      <p>官方目录与 GitHub 社区扩展聚合到一个面板，分类、推荐等级、缓存、代理与一键安装。</p>
+    </div>
+    <div class="hint">GET /marketplace?refresh=1 强制刷新</div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-store"/></svg>两个来源</h4>
+      <ul class="list">
+        <li><b>官方目录</b>：内置精选，带内联图标、中文简介与分类。</li>
+        <li><b>GitHub 社区</b>：按仓库元数据抓取，显示星标、更新时间、仓库与主页链接。</li>
+        <li>合并后统一去重、归一化 manifest，再交给面板渲染。</li>
+      </ul>
+      <div class="foot"><span>service/marketplace.ts</span><span class="pill info">聚合</span></div>
+    </div>
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-refresh"/></svg>缓存与代理</h4>
+      <ul class="list">
+        <li>目录写入磁盘缓存，冷启动直接打开，后台刷新。</li>
+        <li>抓取失败自动重试，并提供“重新加载”。</li>
+        <li>支持 <code>http</code> / <code>https</code> / <code>socks5</code> / <code>socks5h</code> 代理；留空直连。</li>
+      </ul>
+      <div class="foot"><span>service/proxyFetch.ts</span><span class="pill teal">网络</span></div>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-star"/></svg>推荐等级 T0 / T1 / T2</h3>
+  <div class="grid g3">
+    <div class="card">
+      <div class="tier t0"><div class="rank">T0</div><div><h4>必装</h4><p>日常高频、与 OpenWith 工作流强相关；缺失会明显降低体验。</p></div></div>
+      <div class="foot"><span>筛选：必装</span><span class="pill danger">优先安装</span></div>
+    </div>
+    <div class="card">
+      <div class="tier t1"><div class="rank">T1</div><div><h4>按需</h4><p>特定场景使用，例如某个语言、云服务或团队工具。</p></div></div>
+      <div class="foot"><span>筛选：按需</span><span class="pill warn">按场景</span></div>
+    </div>
+    <div class="card">
+      <div class="tier t2"><div class="rank">T2</div><div><h4>冗余</h4><p>功能重叠或维护不活跃；保留展示，但不建议默认安装。</p></div></div>
+      <div class="foot"><span>筛选：冗余</span><span class="pill">谨慎</span></div>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-list"/></svg>分类与更新状态</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4>六个分类</h4>
+      <div class="chips" style="margin-top:10px">
+        <span class="pill info">官方精选</span><span class="pill">社区</span><span class="pill">工具与集成</span><span class="pill">主题与界面</span><span class="pill">MCP 与连接器</span><span class="pill">实验与其他</span>
+      </div>
+      <p>分类筛选与搜索同时匹配中文简介；点击卡片打开仓库，安装按钮只在宿主接受 manifest 时出现。</p>
+    </div>
+    <div class="card">
+      <h4>更新状态</h4>
+      <ul class="list teal">
+        <li><span class="pill ok">可更新</span> 远端版本高于本地，可单项更新。</li>
+        <li><span class="pill">已是最新</span> 版本一致，无需操作。</li>
+        <li><span class="pill warn">待检查</span> 尚未完成远端查询，可手动检查。</li>
+        <li><span class="pill info">本地安装</span> 来自文件夹，不参与远端比较。</li>
+        <li><span class="pill info">二次开发 / 本地修改</span> 检测到本地改动，更新前需确认覆盖。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-activity"/></svg>市场数据流</h3>
+  <div class="flow">
+    <div class="step"><div class="n"></div><div><b>抓取</b><span>官方目录 + GitHub 仓库元数据；可走代理，失败重试。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>归一化</b><span>统一 manifest 字段、图标、中文简介、分类与 T0/T1/T2 等级。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>缓存</b><span>写入磁盘缓存，冷启动先展示缓存，再后台刷新。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>渲染</b><span>卡片 / 紧凑视图切换，显示星标、更新时间、仓库与主页链接。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>安装 / 更新</b><span>调用宿主安装接口；成功后刷新扩展列表并可立即打开标签。</span></div></div>
+  </div>
+</section>
+
+<section id="bridge">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">06</span>宿主桥</h2>
+      <p>嵌入扩展与 OpenChamber 宿主之间的协议层：授权、转发、订阅、生命周期。</p>
+    </div>
+    <div class="hint">panel/guestBridge.ts</div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-key"/></svg>frame-grant 五步</h3>
+  <div class="flow">
+    <div class="step"><div class="n"></div><div><b>请求授权</b><span>面板为某个 guest 申请 frame-grant；宿主校验扩展是否启用、入口是否存在。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>签发 grant</b><span>返回一次性 grant 与过期时间，绑定扩展 id 与面板来源。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>加载 iframe</b><span>使用 <code>/api/guest-files/{grant}/panel/index.html</code>（或扩展声明的入口）加载。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>注入 shim</b><span>postMessage shim 提供宿主 API：storage、serviceRequest、service-status、file-open、会话与目录。</span></div></div>
+    <div class="step"><div class="n"></div><div><b>按作用域订阅</b><span>workspace / shells 共享通道，去重后复用；标签关闭时释放订阅。</span></div></div>
+  </div>
+
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-database"/></svg>storage</h4><p>宿主侧键值存储；面板不直接碰 localStorage，避免沙箱与同源限制。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-plug"/></svg>serviceRequest</h4><p>统一转发到本机服务，自动附带 token；面板无需知道端口与鉴权。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-activity"/></svg>service-status</h4><p>服务启动 / 停止 / 异常状态推送，Canvas 等扩展的设置页不再报“尚未桥接”。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-file"/></svg>file-open</h4><p>纯文件编辑器扩展按 fileEditors 入口打开并注入空白文档，Excalidraw 可直接画图。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-refresh"/></svg>会话跟随</h4><p>宿主切换项目 / 会话时，内嵌面板同步更新；Agent progress 显示当前会话。</p></div>
+    <div class="card pad-sm"><h4><svg class="ic"><use href="#i-spark"/></svg>附加到聊天</h4><p>把 Canvas 产物等引用转发进输入框，形成“面板 → 对话”的工作流。</p></div>
+  </div>
+
+  <div class="callout danger"><b>两个硬限制：</b>frame-grant 有有效期，过期后必须重新申请；每个 frame 最多 32 条 workspace 订阅，因此同一作用域必须复用通道。桥接层负责去重与释放，视图层不要自行重复订阅。</div>
+</section>
+<section id="routes">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">07</span>服务路由</h2>
+      <p>本机服务的完整 HTTP 路由表。所有请求带 Bearer token，统一返回信封。</p>
+    </div>
+    <div class="hint"><span id="routeCount">45</span> 条路由</div>
+  </div>
+
+  <div class="search">
+    <svg class="ic"><use href="#i-search"/></svg>
+    <input id="routeSearch" type="search" placeholder="搜索路径或用途，例如 terminal、webhook、config…" autocomplete="off" aria-label="搜索路由">
+  </div>
+  <div class="chips" id="routeChips">
+    <button class="chip" data-filter="all" aria-pressed="true">全部</button>
+    <button class="chip" data-filter="core" aria-pressed="false">核心 / 配置</button>
+    <button class="chip" data-filter="guest" aria-pressed="false">Guest</button>
+    <button class="chip" data-filter="app" aria-pressed="false">应用 / 文件</button>
+    <button class="chip" data-filter="infra" aria-pressed="false">基础设施</button>
+    <button class="chip" data-filter="session" aria-pressed="false">终端 / 浏览器</button>
+    <button class="chip" data-filter="data" aria-pressed="false">日志 / 变量 / Webhook</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="routeTable">
+      <thead><tr><th style="width:82px">方法</th><th style="width:310px">路径</th><th>用途</th><th style="width:110px">分类</th></tr></thead>
+      <tbody id="routeBody">
+        <tr data-cat="core"><td><span class="pill teal">GET</span></td><td><code>/health</code></td><td>健康检查，返回版本；不要求业务状态。</td><td>核心</td></tr>
+        <tr data-cat="core"><td><span class="pill teal">GET</span></td><td><code>/config</code></td><td>读取当前配置。</td><td>配置</td></tr>
+        <tr data-cat="core"><td><span class="pill warn">PUT</span></td><td><code>/config</code></td><td>深合并保存配置，数组整体替换。</td><td>配置</td></tr>
+        <tr data-cat="core"><td><span class="pill info">POST</span></td><td><code>/config/reset</code></td><td>恢复默认配置。</td><td>配置</td></tr>
+        <tr data-cat="core"><td><span class="pill teal">GET</span></td><td><code>/snapshot</code></td><td>一次性返回配置、guest、应用、WSL、Docker、K8s、ShardX 概览。</td><td>核心</td></tr>
+        <tr data-cat="core"><td><span class="pill teal">GET</span></td><td><code>/marketplace?refresh=1</code></td><td>官方目录 + GitHub 社区扩展；<code>refresh=1</code> 强制刷新。</td><td>市场</td></tr>
+
+        <tr data-cat="guest"><td><span class="pill teal">GET</span></td><td><code>/guests</code></td><td>已安装 guest 列表。</td><td>Guest</td></tr>
+        <tr data-cat="guest"><td><span class="pill info">POST</span></td><td><code>/guests/:id/frame-grant</code></td><td>申请 guest 嵌入授权。</td><td>Guest</td></tr>
+        <tr data-cat="guest"><td><span class="pill info">POST</span></td><td><code>/guests/:id/service-request</code></td><td>代理 guest 的服务请求。</td><td>Guest</td></tr>
+        <tr data-cat="guest"><td><span class="pill warn">PUT</span></td><td><code>/guests/:id/enabled</code></td><td>启用 / 禁用 guest。</td><td>Guest</td></tr>
+        <tr data-cat="guest"><td><span class="pill info">POST</span></td><td><code>/guests/:id/storage</code></td><td>读写 guest 存储。</td><td>Guest</td></tr>
+
+        <tr data-cat="app"><td><span class="pill teal">GET</span></td><td><code>/apps</code></td><td>检测本机应用。</td><td>应用</td></tr>
+        <tr data-cat="app"><td><span class="pill info">POST</span></td><td><code>/apps/:id/open</code></td><td>用指定应用打开项目目录。</td><td>应用</td></tr>
+        <tr data-cat="app"><td><span class="pill info">POST</span></td><td><code>/pick-file/start</code></td><td>打开 Windows 文件选择器，返回 token。</td><td>文件</td></tr>
+        <tr data-cat="app"><td><span class="pill teal">GET</span></td><td><code>/pick-file/result?token=</code></td><td>轮询选择结果（pending / path）。</td><td>文件</td></tr>
+        <tr data-cat="app"><td><span class="pill info">POST</span></td><td><code>/open</code></td><td>按应用名打开绝对路径。</td><td>应用</td></tr>
+
+        <tr data-cat="infra"><td><span class="pill teal">GET</span></td><td><code>/shardx</code></td><td>ShardX API 与实例状态。</td><td>ShardX</td></tr>
+        <tr data-cat="infra"><td><span class="pill info">POST</span></td><td><code>/shardx/launch</code></td><td>启动 ShardX 启动器。</td><td>ShardX</td></tr>
+        <tr data-cat="infra"><td><span class="pill info">POST</span></td><td><code>/shardx/:id/start</code></td><td>启动实例。</td><td>ShardX</td></tr>
+        <tr data-cat="infra"><td><span class="pill info">POST</span></td><td><code>/shardx/:id/stop</code></td><td>停止实例。</td><td>ShardX</td></tr>
+        <tr data-cat="infra"><td><span class="pill teal">GET</span></td><td><code>/wsl</code></td><td>WSL 发行版、IP、端口。</td><td>WSL</td></tr>
+        <tr data-cat="infra"><td><span class="pill teal">GET</span></td><td><code>/docker</code></td><td>Docker 可用性与容器列表。</td><td>Docker</td></tr>
+        <tr data-cat="infra"><td><span class="pill info">POST</span></td><td><code>/docker/containers/:id/:action</code></td><td>容器 start / stop / restart。</td><td>Docker</td></tr>
+        <tr data-cat="infra"><td><span class="pill info">POST</span></td><td><code>/docker/compose/:action</code></td><td>Compose up / down / ps / restart。</td><td>Docker</td></tr>
+        <tr data-cat="infra"><td><span class="pill teal">GET</span></td><td><code>/k8s</code></td><td>context、pod、转发状态。</td><td>K8s</td></tr>
+        <tr data-cat="infra"><td><span class="pill info">POST</span></td><td><code>/k8s/forward</code></td><td>建立端口转发。</td><td>K8s</td></tr>
+        <tr data-cat="infra"><td><span class="pill danger">DELETE</span></td><td><code>/k8s/forward/:id</code></td><td>停止端口转发。</td><td>K8s</td></tr>
+        <tr data-cat="infra"><td><span class="pill info">POST</span></td><td><code>/k8s/forward/:id/stop</code></td><td>停止端口转发（兼容路由）。</td><td>K8s</td></tr>
+
+        <tr data-cat="session"><td><span class="pill info">POST</span></td><td><code>/terminal/exec</code></td><td>一次性命令。</td><td>终端</td></tr>
+        <tr data-cat="session"><td><span class="pill teal">POST/GET</span></td><td><code>/terminal/sessions</code></td><td>创建 / 列出终端会话。</td><td>终端</td></tr>
+        <tr data-cat="session"><td><span class="pill teal">GET</span></td><td><code>/terminal/sessions/:id/output?since=</code></td><td>增量输出。</td><td>终端</td></tr>
+        <tr data-cat="session"><td><span class="pill info">POST</span></td><td><code>/terminal/sessions/:id/input</code></td><td>写入终端。</td><td>终端</td></tr>
+        <tr data-cat="session"><td><span class="pill danger">DELETE</span></td><td><code>/terminal/sessions/:id</code></td><td>关闭终端。</td><td>终端</td></tr>
+        <tr data-cat="session"><td><span class="pill teal">POST/GET</span></td><td><code>/browser/sessions</code></td><td>创建 / 列出浏览器会话。</td><td>浏览器</td></tr>
+        <tr data-cat="session"><td><span class="pill teal">GET</span></td><td><code>/browser/sessions/:id/frame</code></td><td>获取最新帧。</td><td>浏览器</td></tr>
+        <tr data-cat="session"><td><span class="pill info">POST</span></td><td><code>/browser/sessions/:id/navigate</code></td><td>导航。</td><td>浏览器</td></tr>
+        <tr data-cat="session"><td><span class="pill info">POST</span></td><td><code>/browser/sessions/:id/input</code></td><td>输入事件（鼠标 / 键盘 / 滚动）。</td><td>浏览器</td></tr>
+        <tr data-cat="session"><td><span class="pill danger">DELETE</span></td><td><code>/browser/sessions/:id</code></td><td>关闭浏览器。</td><td>浏览器</td></tr>
+
+        <tr data-cat="data"><td><span class="pill teal">GET</span></td><td><code>/logs/sources</code></td><td>可用日志源。</td><td>日志</td></tr>
+        <tr data-cat="data"><td><span class="pill teal">POST/GET</span></td><td><code>/logs/subscriptions</code></td><td>创建 / 列出订阅。</td><td>日志</td></tr>
+        <tr data-cat="data"><td><span class="pill teal">GET</span></td><td><code>/logs/subscriptions/:id/output?since=</code></td><td>增量日志。</td><td>日志</td></tr>
+        <tr data-cat="data"><td><span class="pill danger">DELETE</span></td><td><code>/logs/subscriptions/:id</code></td><td>停止订阅。</td><td>日志</td></tr>
+        <tr data-cat="data"><td><span class="pill info">POST</span></td><td><code>/variables</code></td><td>创建变量上下文。</td><td>变量</td></tr>
+        <tr data-cat="data"><td><span class="pill info">POST</span></td><td><code>/variables/expand</code></td><td>展开模板。</td><td>变量</td></tr>
+        <tr data-cat="data"><td><span class="pill info">POST</span></td><td><code>/webhooks/:id/run</code></td><td>执行 Webhook。</td><td>Webhook</td></tr>
+      </tbody>
+    </table>
+    <div class="empty" id="routeEmpty">没有匹配的路由，换个关键词或分类。</div>
+  </div>
+
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card pad-sm">
+      <h4><svg class="ic"><use href="#i-check"/></svg>响应信封</h4>
+      <pre>{ "ok": true, "data": { ... } }
+{ "ok": false, "error": "message", "detail": "optional" }</pre>
+      <p>400 参数错误 · 404 不存在 · 504 超时 · 500 服务内部错误。</p>
+    </div>
+    <div class="card pad-sm">
+      <h4><svg class="ic"><use href="#i-shield"/></svg>服务生命周期</h4>
+      <ul class="list">
+        <li>只监听 <code>127.0.0.1</code>，启动时生成 Bearer token。</li>
+        <li>退出时清理终端、浏览器、端口转发与子进程。</li>
+        <li>日志单文件 10 MB，超出轮转；市场缓存独立文件。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="config">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">08</span>配置与权限</h2>
+      <p>扩展声明什么、服务允许什么、用户能改什么，三者分开。</p>
+    </div>
+    <div class="hint">最小权限 + 显式 allowlist</div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-key"/></svg>扩展声明</h4>
+      <dl class="kv">
+        <dt>capabilities</dt><dd><code>sessions</code> · <code>prompt</code> · <code>files</code> · <code>model</code></dd>
+        <dt>filesystem</dt><dd><code>~/**</code> · <code>/.git/**</code> · <code>/workspace/**</code></dd>
+        <dt>panel</dt><dd><code>id: openwith</code> · <code>entry: panel/index.html</code></dd>
+        <dt>page</dt><dd><code>true</code>（可作为整页打开）</dd>
+        <dt>service</dt><dd><code>runtime: host</code> · 启动本机 Node 服务</dd>
+        <dt>engines</dt><dd>OpenChamber <code>&gt;= 2.0.0</code></dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-terminal"/></svg>exec allowlist</h4>
+      <p>只有下列命令可以被服务拉起；新增外部命令必须同时写进 <code>package.json → openchamber.contributes.service.permissions.exec</code>。</p>
+      <div class="chips" style="margin-top:10px">
+        <span class="pill info">open / xdg-open</span><span class="pill info">cmd / powershell / pwsh</span><span class="pill info">which / where</span><span class="pill info">taskkill</span><span class="pill info">wsl / bash / sh</span><span class="pill info">git / curl</span><span class="pill info">docker / kubectl</span><span class="pill info">code / cursor / zed / subl</span><span class="pill info">ghostty / warp / wt</span><span class="pill info">explorer / notepad</span><span class="pill info">taskmgr / control</span><span class="pill info">mspaint / snippingtool</span><span class="pill info">chrome / msedge</span><span class="pill info">ShardBrowser-Launcher</span>
+      </div>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-lock"/></svg>安全边界清单</h3>
+  <div class="grid g3">
+    <div class="card pad-sm"><h4>面板</h4><ul class="list"><li>allow-scripts，无 same-origin 存储。</li><li>严格 CSP，不允许任意 iframe。</li><li>不接触 Node、文件系统、子进程。</li></ul></div>
+    <div class="card pad-sm"><h4>桥</h4><ul class="list"><li>frame-grant 一次性、带过期。</li><li>只转发已启用 guest 的请求。</li><li>订阅按作用域去重并释放。</li></ul></div>
+    <div class="card pad-sm"><h4>服务</h4><ul class="list"><li>loopback + Bearer token。</li><li>2 MB 请求体上限。</li><li>命令 allowlist，参数按控制器校验。</li></ul></div>
+  </div>
+
+  <div class="callout warn"><b>配置写入：</b>先写临时文件再原子替换；版本号用于迁移。读取时默认配置与用户配置深合并，数组不逐项合并，避免“删不掉的旧项”。</div>
+</section>
+
+<section id="build">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">09</span>构建与发布</h2>
+      <p>TypeScript 源码 → Bun 打包 → dist/ → GitHub Release / release 分支。</p>
+    </div>
+    <div class="hint">Node 20+ · npm 10+ · Bun 1.3.x</div>
+  </div>
+
+  <div class="split">
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-terminal"/></svg>本地命令</h4>
+      <pre>npm ci
+npm run typecheck   # tsc --noEmit
+npm run build       # scripts/build.mjs
+npm test            # typecheck + build</pre>
+      <p>构建产物在 <code>dist/</code>，永远不提交；源码与已安装副本的 dist 不应漂移。</p>
+      <div class="foot"><span>Bun 执行 @openchamber/sdk 的 bundle-guest</span><span class="pill info">本地</span></div>
+    </div>
+    <div class="card">
+      <h4><svg class="ic"><use href="#i-rocket"/></svg>发布流程</h4>
+      <div class="flow" style="margin-top:6px">
+        <div class="step"><div class="n"></div><div><b>push main</b><span>构建并发布滚动 <code>latest</code> Release，同时刷新 orphan <code>release</code> 分支。</span></div></div>
+        <div class="step"><div class="n"></div><div><b>push tag vX.Y.Z</b><span>发布版本化 Release，同样刷新 <code>release</code> 分支。</span></div></div>
+        <div class="step"><div class="n"></div><div><b>附件</b><span>两种路径都附带同一个构建 zip，供下载安装。</span></div></div>
+      </div>
+      <div class="foot"><span>.github/workflows/release.yml</span><span class="pill teal">CI</span></div>
+    </div>
+  </div>
+
+  <div class="callout teal"><b>安装方式：</b>把 <code>dist/</code> 作为文件夹扩展安装，或用仓库 git URL 安装；宿主比较 <code>package.json</code> 版本决定是否更新。<code>release</code> 分支只含构建产物，单 commit，可原地更新。</div>
+</section>
+
+<section id="iterate">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">10</span>迭代指南</h2>
+      <p>四个最常用的扩展点，以及每次改完必须做的事。</p>
+    </div>
+    <div class="hint">先看文件地图，再选扩展点</div>
+  </div>
+
+  <div class="tree"><b>openwith-matrix/</b>
+├─ <i>panel/</i>                沙箱 UI（无 Node）
+│  ├─ <b>main.ts</b>            壳层、宿主请求、标签工厂
+│  ├─ <b>guestBridge.ts</b>      宿主 shim、frame-grant、订阅去重
+│  ├─ <b>tabManager.ts</b>       标签 / 分屏 / 置顶 / 持久化
+│  ├─ <i>views/</i>              homeTabs · matrixHome · marketplaceProxy · config · logs
+│  ├─ extensionIcons.ts        图标与主题对比度
+│  └─ styles.css               窄面板优先的样式
+├─ <i>service/</i>              Node 服务（不碰 DOM）
+│  ├─ <b>main.ts</b>             路由表、生命周期、鉴权
+│  ├─ <b>configStore.ts</b>      深合并、原子写、迁移
+│  ├─ <b>guestManager.ts</b>     frame-grant、宿主 API、存储
+│  ├─ <b>marketplace.ts</b>      官方 + GitHub 聚合
+│  ├─ marketplaceTiers.ts       T0 / T1 / T2
+│  ├─ marketplaceZh.ts          中文简介
+│  ├─ proxyFetch.ts             http / socks 代理
+│  └─ ...                       应用、WSL、Docker、K8s、终端、浏览器、日志控制器
+├─ <b>shared/types.ts</b>        panel ↔ service 唯一契约
+├─ <b>config/default-matrix.json</b> 出厂默认配置
+├─ <b>scripts/build.mjs</b>      构建入口
+├─ <i>docs/</i>                  ARCHITECTURE · BASELINE · CONFIG · DEVELOPMENT · canvas
+├─ <i>demo/</i>                  截图与演示资源
+└─ <b>.github/workflows/release.yml</b></div>
+
+  <h3><svg class="ic"><use href="#i-code"/></svg>四个扩展点</h3>
+  <div class="grid g2">
+    <div class="card">
+      <h4>1 · 新增资源分区</h4>
+      <ol class="list" style="padding-left:18px">
+        <li>在 <code>shared/types.ts</code> 增加类型与默认值。</li>
+        <li>在 <code>config/default-matrix.json</code> 加空数组 / 示例。</li>
+        <li>服务快照聚合该资源，必要时加控制器与路由。</li>
+        <li>在 <code>panel/views/</code> 加卡片、编辑器与动作。</li>
+        <li>补 changelog、ARCHITECTURE、CONFIG 与 README 双语文档。</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h4>2 · 新增标签页类型</h4>
+      <ol class="list" style="padding-left:18px">
+        <li>在标签类型联合里加新 kind，并定义持久化字段。</li>
+        <li>在 <code>panel/main.ts</code> 的标签工厂注册创建 / 恢复逻辑。</li>
+        <li>在 <code>tabManager.ts</code> 处理保活、置顶、分屏与上限。</li>
+        <li>如果是 guest，走 <code>guestBridge.ts</code> 的 grant 与 shim。</li>
+        <li>更新新标签菜单、图标与文档。</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h4>3 · 新增服务能力</h4>
+      <ol class="list" style="padding-left:18px">
+        <li>在 <code>service/main.ts</code> 注册路由，写清方法与错误码。</li>
+        <li>控制器放在 <code>service/</code>，只返回数据，不碰 DOM。</li>
+        <li>需要新命令时，把可执行文件加入 <code>permissions.exec</code>。</li>
+        <li>在 <code>shared/types.ts</code> 定义请求 / 响应类型。</li>
+        <li>补路由表文档与 changelog。</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h4>4 · 新增模板变量</h4>
+      <ol class="list" style="padding-left:18px">
+        <li>在变量上下文中解析新值（路径、分支、IP 等）。</li>
+        <li>在 <code>/variables/expand</code> 支持替换。</li>
+        <li>在面板的变量提示与输入校验中展示。</li>
+        <li>更新 CONFIG 文档与本文“模板变量”表。</li>
+      </ol>
+    </div>
+  </div>
+
+  <h3><svg class="ic"><use href="#i-check"/></svg>每次改完的检查单</h3>
+  <div class="card">
+    <ul class="list check">
+      <li>在 <code>changelog.md</code> 顶部加一行：<code>- 新增|优化|修复 YYYY-MM-DD 描述</code>。</li>
+      <li>同步 <code>README.md</code> 与 <code>README.zh-CN.md</code>；更新受影响的 <code>docs/</code>。</li>
+      <li>运行 <code>npm run typecheck</code> 与 <code>npm run build</code>，必要时 <code>npm test</code>。</li>
+      <li>行为变更时，把 <code>dist/</code> 作为文件夹扩展安装并按 BASELINE §5 验证。</li>
+      <li>不提交 <code>dist/</code>、<code>node_modules/</code>、日志、本地配置或密钥。</li>
+      <li>面板在约 406 px 宽度下仍可用；新增命令已加入 exec allowlist。</li>
+    </ul>
+  </div>
+
+  <div class="callout"><b>更新这张地图：</b>编辑 <code>docs/canvas/openwith-feature-map.html</code>，用 Canvas 以同一个 <code>dedupeKey</code> 重新发布；在 changelog 记一行“优化 功能地图”。本页是静态 HTML，无外部依赖，可直接作为迭代基线。</div>
+</section>
+
+<section id="timeline">
+  <div class="sec-head">
+    <div>
+      <h2><span class="num">11</span>里程碑</h2>
+      <p>从单页工具到 Matrix 2.x 的关键节点。</p>
+    </div>
+    <div class="hint">最新在上</div>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-item teal"><time>2026-11-15</time><b>仓库迁移与功能地图</b><span>代码整理到私有仓库 openchamber-openwith；新增交互式功能地图（本页）。</span></div>
+    <div class="tl-item"><time>2026-11-13</time><b>市场代理设置</b><span>目录抓取与仓库元数据支持 http / https / socks5 / socks5h 代理，留空直连。</span></div>
+    <div class="tl-item"><time>2026-11-12</time><b>T0 / T1 / T2 推荐等级</b><span>市场按必装、按需、冗余分级，增加筛选与悬停说明。</span></div>
+    <div class="tl-item"><time>2026-11-11</time><b>宿主桥修复批次</b><span>Excalidraw 文件编辑器入口、订阅去重、service-status、会话跟随、附加到聊天。</span></div>
+    <div class="tl-item"><time>2026-11-10</time><b>市场缓存与卸载</b><span>目录落盘缓存、冷启动秒开、失败重试；扩展行新增卸载。</span></div>
+    <div class="tl-item"><time>2026-11-09</time><b>扩展市场</b><span>官方目录 + GitHub 社区聚合，分类、星标、更新时间、一键安装。</span></div>
+    <div class="tl-item"><time>2026-11-06</time><b>可配置主页</b><span>主页标签可改名 / 排序 / 隐藏，资源编辑器与自定义分组。</span></div>
+    <div class="tl-item"><time>2026-11-05</time><b>Matrix 2.0 基线</b><span>Tab OS、分屏、保活、扩展嵌入、WSL / Docker / K8s / 终端 / 日志 / 网页资源组。</span></div>
+    <div class="tl-item teal"><time>2026-10-13</time><b>起点</b><span>单页 OpenWith：用本机应用打开项目目录。</span></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div>
+    <b>OpenWith Matrix · 功能地图</b><br>
+    静态 HTML · 无外部依赖 · 生成于 2026-11-15 · 适用于 v2.1.0
+  </div>
+  <div class="links">
+    <a href="https://github.com/wbi35772/openchamber-openwith" target="_blank" rel="noreferrer">私有仓库</a>
+    <a href="https://openchamber.dev" target="_blank" rel="noreferrer">OpenChamber</a>
+    <a href="#overview">回到顶部</a>
+  </div>
+</footer>
+</main>
+</div>
+
+<button class="top" id="topBtn" type="button" aria-label="回到顶部"><svg class="ic"><use href="#i-up"/></svg></button>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('themeBtn');
+  var themeIcon = document.getElementById('themeIcon');
+  var themeLabel = document.getElementById('themeLabel');
+
+  function setTheme(theme) {
+    root.setAttribute('data-theme', theme);
+    if (themeIcon) themeIcon.setAttribute('href', theme === 'dark' ? '#i-moon' : '#i-sun');
+    if (themeLabel) themeLabel.textContent = theme === 'dark' ? '暗色' : '亮色';
+  }
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function () {
+      setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+  }
+
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+  var sections = navLinks.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        navLinks.forEach(function (a) {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
+        });
+      });
+    }, { rootMargin: '-18% 0px -70% 0px', threshold: 0.01 });
+    sections.forEach(function (s) { io.observe(s); });
+  }
+
+  var tabButtons = Array.prototype.slice.call(document.querySelectorAll('.tab-btn'));
+  var tabPanels = Array.prototype.slice.call(document.querySelectorAll('.tab-panel'));
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var kind = btn.getAttribute('data-kind');
+      tabButtons.forEach(function (b) { b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
+      tabPanels.forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-panel') === kind); });
+    });
+  });
+
+  var search = document.getElementById('routeSearch');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('#routeChips .chip'));
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#routeBody tr'));
+  var empty = document.getElementById('routeEmpty');
+  var count = document.getElementById('routeCount');
+  var activeFilter = 'all';
+
+  function applyFilter() {
+    var q = search ? search.value.trim().toLowerCase() : '';
+    var visible = 0;
+    rows.forEach(function (row) {
+      var matchCat = activeFilter === 'all' || row.getAttribute('data-cat') === activeFilter;
+      var matchText = !q || row.textContent.toLowerCase().indexOf(q) !== -1;
+      var show = matchCat && matchText;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    if (empty) empty.style.display = visible ? 'none' : 'block';
+    if (count) count.textContent = String(visible);
+  }
+  if (search) search.addEventListener('input', applyFilter);
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      activeFilter = chip.getAttribute('data-filter');
+      chips.forEach(function (c) { c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'); });
+      applyFilter();
+    });
+  });
+  applyFilter();
+
+  var topBtn = document.getElementById('topBtn');
+  if (topBtn) {
+    window.addEventListener('scroll', function () {
+      topBtn.classList.toggle('on', window.scrollY > 600);
+    }, { passive: true });
+    topBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll('[data-copy]')).forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.getAttribute('data-copy');
+      var done = function () {
+        var old = btn.textContent;
+        btn.textContent = '已复制';
+        setTimeout(function () { btn.textContent = old; }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () {});
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

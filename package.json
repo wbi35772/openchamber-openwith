@@ -1,5 +1,5 @@
 {
-  "name": "openchamber-openwith-matrix",
+  "name": "openchamber-openwith",
   "version": "2.1.0",
   "private": true,
   "type": "module",
@@ -19,11 +19,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wbi35772/openchamber-openwith-matrix.git"
+    "url": "git+https://github.com/wbi35772/openchamber-openwith.git"
   },
-  "homepage": "https://github.com/wbi35772/openchamber-openwith-matrix#readme",
+  "homepage": "https://github.com/wbi35772/openchamber-openwith#readme",
   "bugs": {
-    "url": "https://github.com/wbi35772/openchamber-openwith-matrix/issues"
+    "url": "https://github.com/wbi35772/openchamber-openwith/issues"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

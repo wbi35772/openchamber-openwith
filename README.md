@@ -110,10 +110,10 @@ OpenChamber **2.0.0 or newer**, web or desktop.
 1. Open **Settings → Extensions**.
 2. Add one of:
    - the latest zip:
-     `https://github.com/wbi35772/openchamber-openwith-matrix/releases/latest/download/openchamber-openwith-matrix-latest.zip`
+     `https://github.com/wbi35772/openchamber-openwith/releases/latest/download/openchamber-openwith-latest.zip`
    - the `dist/` folder of a local clone after `npm run build`;
    - the git URL of the `release` branch:
-     `https://github.com/wbi35772/openchamber-openwith-matrix.git#release`
+     `https://github.com/wbi35772/openchamber-openwith.git#release`
      (git installs can update in place when `package.json` version increases).
 3. Approve **Allow and enable**. The dialog lists the local service and the
    commands it may run.
@@ -239,6 +239,7 @@ the rolling `latest` Release. See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md).
 | 2026-10-13 | First release: a side-panel launcher for extensions, apps and links |
 | 2026-11-05 | 2.0.0 baseline: tab workspace, split view, config v4, 11 resource sections |
 | 2026-11-06 | Tabbed home, layered actions, editable/deletable built-in tabs, hierarchical resource navigation |
+| 2026-11-13 | Marketplace proxy, T0/T1/T2 tiers and a cached catalog |
 
 Every change is listed in [changelog.md](./changelog.md).
 
@@ -249,6 +250,7 @@ Every change is listed in [changelog.md](./changelog.md).
 - [Architecture](./docs/ARCHITECTURE.md) — runtime, panel, service, routes
 - [Configuration](./docs/CONFIG.md) — every field, default and variable
 - [Development](./docs/DEVELOPMENT.md) — build, debug, release
+- [Feature map](./docs/canvas/openwith-feature-map.html) — interactive architecture and feature map (Canvas)
 - [v1 design archive](./docs/design/v1-open-with-proposal.md)
 
 ## License

@@ -85,11 +85,12 @@ panel/
   tabManager.ts         标签状态、保活、置顶、排序、分屏、持久化
   guestBridge.ts        注入 guest 的宿主协议 shim
   views/
-    matrixHomeView.ts   矩阵主页、六个卡片、分页、自定义分组
+    matrixHomeView.ts   矩阵主页、资源卡片、分页、自定义分组与扩展市场
     resourceEditorView.ts 资源管理弹窗（11 个分区）
     homeGroupsView.ts   自定义分组编辑弹窗
     configModalView.ts  原始配置编辑弹窗
     logStreamView.ts    日志流面板
+    marketplaceProxyView.ts 扩展市场代理设置弹窗
   styles.css            全部样式（含窄面板断点）
 ```
 
@@ -164,6 +165,10 @@ service/
   webProxy.ts           无头浏览器会话、CDP、帧编码
   logController.ts      日志源解析、订阅、滚动缓冲
   guestManager.ts       guest 发现、frame-grant、service-request 代理
+  marketplace.ts        官方目录与 GitHub 社区扩展聚合、磁盘缓存
+  marketplaceTiers.ts   T0/T1/T2 推荐等级
+  marketplaceZh.ts      扩展中文简介
+  proxyFetch.ts         http/https/socks5/socks5h 代理请求
   hostLauncher.ts       应用检测与启动（含绝对 exe 路径）
   shardxController.ts   ShardX API 与实例启停
   wslController.ts      WSL 发行版、IP、端口探测
@@ -190,6 +195,7 @@ service/
 | PUT | `/config` | 深合并保存配置（数组替换） |
 | POST | `/config/reset` | 恢复默认配置 |
 | GET | `/snapshot` | 一次性返回配置、guest、应用、WSL、Docker、K8s、ShardX 概览 |
+| GET | `/marketplace?refresh=1` | 返回官方目录与 GitHub 社区扩展，`refresh=1` 强制刷新 |
 | GET | `/guests` | 已安装 guest 列表 |
 | POST | `/guests/:id/frame-grant` | 申请 guest 嵌入授权 |
 | POST | `/guests/:id/service-request` | 代理 guest 的服务请求 |
@@ -273,6 +279,15 @@ Windows 的 `.cmd` 启动器经 `cmd /c` 执行。
 
 `POST /variables` 生成上下文，`POST /variables/expand` 展开模板。
 
+### 4.6 扩展市场
+
+`MarketplaceService` 聚合两类来源：OpenChamber 官方目录和 GitHub 社区扩展仓库。目录按
+`official`／`github`、分类与 T0/T1/T2 推荐等级归一化，中文简介来自 `marketplaceZh.ts`，
+社区条目补充星标、更新时间和安装地址。抓取结果写入
+`~/.config/openchamber/openwith-matrix-marketplace.json`，冷启动直接读缓存，后台再刷新；
+`settings.marketplace.proxy` 支持 http/https/socks5/socks5h，留空直连。面板侧由
+`marketplaceProxyView.ts` 提供代理设置弹窗。
+
 ## 5. 错误处理与日志
 
 - 服务端抛出的 `HttpError` 统一转成 JSON；未知异常记录日志并返回 500。
@@ -293,7 +308,7 @@ npm test           -> typecheck + build
 GitHub Actions（`.github/workflows/release.yml`）在 `main` 推送时：
 
 1. `npm ci`、类型检查、构建；
-2. 打包 `openchamber-openwith-matrix-latest.zip`；
+2. 打包 `openchamber-openwith-latest.zip`；
 3. 强制推送 `dist/` 到孤立 `release` 分支（供 git URL 安装）；
 4. 创建/更新 `latest` Release 并上传 zip。
 
